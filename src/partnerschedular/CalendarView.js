@@ -3,6 +3,7 @@ import { AppContext } from './index';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { getEventEmoji } from '../utils/eventUtils';
 
 export const CalendarView = () => {
   const { state, dispatch } = useContext(AppContext);
@@ -54,8 +55,9 @@ export const CalendarView = () => {
               <div key={`day-${day}`} className="p-2 border">
                 <div className="text-right">{day}</div>
                 {events.map(event => (
-                  <div key={event.timeSlot} className="text-xs mt-1 p-1 rounded" style={{backgroundColor: event.partner.color}}>
-                    {event.partner.name} - {event.contentType} ({event.timeSlot})
+                  <div key={event.timeSlot} className="text-xs mt-1 p-1 rounded flex items-center border">
+                    <span className="w-3 h-2 rounded mr-2" style={{backgroundColor: event.partner.color}}></span>
+                    {getEventEmoji(event.contentType)} {event.partner.name} - {event.contentType} ({event.timeSlot})
                   </div>
                 ))}
               </div>
