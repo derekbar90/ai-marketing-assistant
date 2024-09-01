@@ -35,6 +35,7 @@ export const PartnerList = () => {
   const [partnerName, setPartnerName] = useState('');
   const [partnerColor, setPartnerColor] = useState(getRandomColor());
   const [partnerWeight, setPartnerWeight] = useState(1);
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const handleAddPartner = () => {
     const newPartner = { id: Date.now(), name: partnerName, color: partnerColor, weight: partnerWeight };
@@ -42,6 +43,7 @@ export const PartnerList = () => {
     setPartnerName('');
     setPartnerColor(getRandomColor());
     setPartnerWeight(1);
+    setShowColorPicker(false);
   };
 
   const handleWeightChange = (id, newWeight) => {
@@ -62,10 +64,21 @@ export const PartnerList = () => {
             onChange={(e) => setPartnerName(e.target.value)} 
             placeholder="Enter partner name" 
           />
-          <SketchPicker 
-            color={partnerColor} 
-            onChangeComplete={(color) => setPartnerColor(color.hex)} 
-          />
+          <div className="relative">
+            <div 
+              className="w-10 h-10 cursor-pointer" 
+              style={{ backgroundColor: partnerColor }} 
+              onClick={() => setShowColorPicker(!showColorPicker)}
+            />
+            {showColorPicker && (
+              <div className="absolute z-10">
+                <SketchPicker 
+                  color={partnerColor} 
+                  onChangeComplete={(color) => setPartnerColor(color.hex)} 
+                />
+              </div>
+            )}
+          </div>
           <Slider
             defaultValue={[partnerWeight]}
             max={100}
