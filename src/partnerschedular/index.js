@@ -1,7 +1,9 @@
-import React, { useReducer, createContext } from 'react';
+import React, { useReducer, createContext, useState } from 'react';
 import { PartnerList } from './PartnerList';
 import { ScheduleGenerator } from './ScheduleGenerator';
 import { CalendarView } from './CalendarView';
+import { EventSidebar } from './EventSidebar';
+import { BulkAddPartners } from './BulkAddPartners';
 import { appReducer, loadStateFromLocalStorage } from './appReducer';
 import { generateSchedule } from './scheduleUtils';
 import { resolveConflicts } from './conflictResolution';
@@ -12,6 +14,8 @@ export const AppContext = createContext();
 
 export const PartnerSchedulingApp = () => {
   const [state, dispatch] = useReducer(appReducer, loadStateFromLocalStorage());
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
 
   const handleGenerateSchedule = () => {
     const newSchedule = generateSchedule(state);
@@ -23,6 +27,22 @@ export const PartnerSchedulingApp = () => {
     exportToCSV(state.schedule);
   };
 
+  const handleEventClick = (event) => {
+    setSelectedEvent(event);
+  };
+
+  const handleCloseSidebar = () => {
+    setSelectedEvent(null);
+  };
+
+  const handleBulkAddClick = () => {
+    setShowBulkAdd(true);
+  };
+
+  const handleCloseBulkAdd = () => {
+    setShowBulkAdd(false);
+  };
+
   return (
     <AppContext.Provider value={{ state, dispatch }}>
       <div className="p-4 max-w-6xl mx-auto">
@@ -30,7 +50,7 @@ export const PartnerSchedulingApp = () => {
         
         <PartnerList />
         <ScheduleGenerator onGenerate={handleGenerateSchedule} />
-        <CalendarView />
+        <CalendarView onEventClick={handleEventClick} />
         
         <Button 
           onClick={handleExport}
@@ -38,6 +58,16 @@ export const PartnerSchedulingApp = () => {
         >
           Export to CSV
         </Button>
+
+        <Button 
+          onClick={handleBulkAddClick}
+          className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Bulk Add Partners
+        </Button>
+
+        <EventSidebar event={selectedEvent} onClose={handleCloseSidebar} />
+        {showBulkAdd && <BulkAddPartners onClose={handleCloseBulkAdd} />}
       </div>
     </AppContext.Provider>
   );
