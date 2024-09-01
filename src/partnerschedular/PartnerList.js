@@ -17,27 +17,6 @@ const getRandomColor = () => {
   return color;
 };
 
-// Function to balance weights
-const balanceWeights = (partners, updatedPartner) => {
-  const totalWeight = 100;
-  const remainingWeight = totalWeight - updatedPartner.weight;
-  const otherPartners = partners.filter(partner => partner.id !== updatedPartner.id);
-
-  if (otherPartners.length === 0) {
-    return [updatedPartner];
-  }
-
-  const weightPerPartner = remainingWeight / otherPartners.length;
-
-  return [
-    updatedPartner,
-    ...otherPartners.map(partner => ({
-      ...partner,
-      weight: weightPerPartner
-    }))
-  ];
-};
-
 export const PartnerList = () => {
   const { state, dispatch } = useContext(AppContext);
   const [partnerName, setPartnerName] = useState('');
@@ -46,6 +25,7 @@ export const PartnerList = () => {
   const [showColorPicker, setShowColorPicker] = useState(false);
 
   useEffect(() => {
+    console.log('saving');
     localStorage.setItem('appState', JSON.stringify(state));
   }, [state]);
 
@@ -60,8 +40,7 @@ export const PartnerList = () => {
 
   const handleWeightChange = (id, newWeight) => {
     const updatedPartner = { ...state.partners.find(partner => partner.id === id), weight: newWeight };
-    const balancedPartners = balanceWeights(state.partners, updatedPartner);
-    dispatch({ type: 'UPDATE_PARTNER_WEIGHT', payload: balancedPartners });
+    dispatch({ type: 'UPDATE_PARTNER_WEIGHT', payload: updatedPartner });
   };
 
   return (
@@ -102,7 +81,7 @@ export const PartnerList = () => {
           </Button>
         </div>
         <ul>
-          {state.partners.map(partner => (
+          {Array.isArray(state.partners) && state.partners.map(partner => (
             <li key={partner.id} className="flex justify-between items-center">
               <div className="flex items-center mr-4 border-2 border-gray-300 rounded-md p-2">
                 <div 

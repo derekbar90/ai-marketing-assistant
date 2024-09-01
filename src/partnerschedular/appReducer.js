@@ -2,10 +2,8 @@ export const initialState = {
   partners: [],
   schedule: [],
   preferences: {
-    contentType: 'tweet', // Add a default content type
     contentTypes: ['tweet', 'blog'],
     timeSlots: ['morning', 'afternoon', 'evening'],
-    blogLimitPerWeek: 3, // Add blog limit per week
   },
   currentMonth: new Date(),
 };
@@ -25,6 +23,7 @@ export const loadStateFromLocalStorage = () => {
         ...initialState.preferences,
         ...loadedState.preferences,
       },
+      partners: Array.isArray(loadedState.partners) ? loadedState.partners : initialState.partners,
     };
   } catch (err) {
     return initialState;
@@ -44,7 +43,12 @@ export const appReducer = (state, action) => {
     case 'SET_CURRENT_MONTH':
       return { ...state, currentMonth: action.payload };
     case 'UPDATE_PARTNER_WEIGHT':
-      return { ...state, partners: action.payload };
+      return { 
+        ...state, 
+        partners: state.partners.map(partner => 
+          partner.id === action.payload.id ? action.payload : partner
+        ) 
+      };
     default:
       return state;
   }
