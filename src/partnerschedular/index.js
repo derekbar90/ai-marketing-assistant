@@ -2,7 +2,7 @@ import React, { useReducer, createContext } from 'react';
 import { PartnerList } from './PartnerList';
 import { ScheduleGenerator } from './ScheduleGenerator';
 import { CalendarView } from './CalendarView';
-import { appReducer, initialState } from './appReducer';
+import { appReducer, loadStateFromLocalStorage } from './appReducer';
 import { generateSchedule } from './scheduleUtils';
 import { resolveConflicts } from './conflictResolution';
 import { exportToCSV } from './exportUtils';
@@ -11,7 +11,7 @@ import { Button } from './../components/ui/button';
 export const AppContext = createContext();
 
 export const PartnerSchedulingApp = () => {
-  const [state, dispatch] = useReducer(appReducer, initialState);
+  const [state, dispatch] = useReducer(appReducer, loadStateFromLocalStorage());
 
   const handleGenerateSchedule = () => {
     const newSchedule = generateSchedule(state);

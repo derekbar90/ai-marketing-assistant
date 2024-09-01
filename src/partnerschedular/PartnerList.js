@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from './index';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -22,12 +22,20 @@ const balanceWeights = (partners, updatedPartner) => {
   const totalWeight = 100;
   const remainingWeight = totalWeight - updatedPartner.weight;
   const otherPartners = partners.filter(partner => partner.id !== updatedPartner.id);
+
+  if (otherPartners.length === 0) {
+    return [updatedPartner];
+  }
+
   const weightPerPartner = remainingWeight / otherPartners.length;
 
-  return otherPartners.map(partner => ({
-    ...partner,
-    weight: weightPerPartner
-  }));
+  return [
+    updatedPartner,
+    ...otherPartners.map(partner => ({
+      ...partner,
+      weight: weightPerPartner
+    }))
+  ];
 };
 
 export const PartnerList = () => {
@@ -36,6 +44,10 @@ export const PartnerList = () => {
   const [partnerColor, setPartnerColor] = useState(getRandomColor());
   const [partnerWeight, setPartnerWeight] = useState(1);
   const [showColorPicker, setShowColorPicker] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('appState', JSON.stringify(state));
+  }, [state]);
 
   const handleAddPartner = () => {
     const newPartner = { id: Date.now(), name: partnerName, color: partnerColor, weight: partnerWeight };
@@ -49,7 +61,7 @@ export const PartnerList = () => {
   const handleWeightChange = (id, newWeight) => {
     const updatedPartner = { ...state.partners.find(partner => partner.id === id), weight: newWeight };
     const balancedPartners = balanceWeights(state.partners, updatedPartner);
-    dispatch({ type: 'UPDATE_PARTNER_WEIGHT', payload: { updatedPartner, balancedPartners } });
+    dispatch({ type: 'UPDATE_PARTNER_WEIGHT', payload: balancedPartners });
   };
 
   return (
@@ -92,7 +104,13 @@ export const PartnerList = () => {
         <ul>
           {state.partners.map(partner => (
             <li key={partner.id} className="flex justify-between items-center">
-              <span style={{ color: partner.color }}>{partner.name}</span>
+              <div className="flex items-center mr-4 border-2 border-gray-300 rounded-md p-2">
+                <div 
+                  className="w-4 h-4 rounded-full border mr-2" 
+                  style={{ backgroundColor: partner.color }} 
+                />
+                <span className="text-lg">{partner.name}</span>
+              </div>
               <Slider
                 defaultValue={[partner.weight]}
                 max={100}
