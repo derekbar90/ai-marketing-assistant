@@ -31,8 +31,11 @@ export const CalendarView = ({ onEventClick }) => {
   };
 
   const handleAddToCalendar = (event) => {
-    // Implement the logic to add the event to the calendar
-    console.log("Adding to calendar:", event);
+    const startTime = new Date(event.date).toISOString().replace(/-|:|\.\d\d\d/g, "");
+    const endTime = new Date(new Date(event.date).getTime() + 60 * 60 * 1000).toISOString().replace(/-|:|\.\d\d\d/g, ""); // Assuming 1 hour duration
+    const gcalUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.contentType + ' - ' +event.partner.name)}&dates=${startTime}/${endTime}&details=${encodeURIComponent(event.contentType)}&location=${encodeURIComponent(event.location || '')}&sf=true&output=xml`;
+
+    window.open(gcalUrl, '_blank');
   };
 
   return (

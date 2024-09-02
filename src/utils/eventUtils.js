@@ -4,11 +4,11 @@ export const getEventEmoji = (contentType) => {
       return '📅';
     case 'call':
       return '📞';
-    case 'blog':
+    case 'Blog':
       return '📝';
     case 'task':
       return '📝';
-    case 'tweet':
+    case 'Tweet':
       return '🐥';
     default:
       return '🔔';

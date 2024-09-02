@@ -1,4 +1,5 @@
 import React, { useReducer, createContext, useState } from 'react';
+import OpenAI from 'openai';
 import { PartnerList } from './PartnerList';
 import { ScheduleGenerator } from './ScheduleGenerator';
 import { CalendarView } from './CalendarView';
@@ -28,6 +29,10 @@ export const PartnerSchedulingApp = () => {
   };
 
   const handleEventClick = (event) => {
+    const savedContent = localStorage.getItem(`event_${event.id}_content`);
+    if (savedContent) {
+      event.generatedContent = savedContent;
+    }
     setSelectedEvent(event);
   };
 
@@ -43,6 +48,31 @@ export const PartnerSchedulingApp = () => {
     setShowBulkAdd(false);
   };
 
+  const handleGenerateContent = async (template, apiKey, event) => {
+    if (!template || !apiKey) {
+      console.error('Template and API key are required');
+      return false;
+    }
+
+    const client = new OpenAI({
+      apiKey: apiKey,
+      dangerouslyAllowBrowser: true, // Enable this option to allow running in a browser environment
+    });
+
+    try {
+      const response = await client.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: `${template}\n\nEvent Details:\nPartner: ${event.partner.name}\nContent Type: ${event.contentType}\nTime Slot: ${event.timeSlot}\nDate: ${new Date(event.date).toDateString()}` }],
+      });
+
+      console.log('Generated content:', response.choices[0].message.content);
+      return true;
+    } catch (error) {
+      console.error('Error generating content:', error);
+      return false;
+    }
+  };
+
   return (
     <AppContext.Provider value={{ state, dispatch }}>
       <div className="p-4 mx-14 mx-auto">
@@ -51,7 +81,6 @@ export const PartnerSchedulingApp = () => {
         <div className="flex">
           <div className="w-1/2 pr-2">
             <PartnerList />
-
           </div>
           <div className="w-1/2 pl-2">
             <Button
@@ -72,8 +101,7 @@ export const PartnerSchedulingApp = () => {
           </div>
         </div>
 
-
-        <EventSidebar event={selectedEvent} onClose={handleCloseSidebar} />
+        <EventSidebar event={selectedEvent} onClose={handleCloseSidebar} onGenerateContent={handleGenerateContent} />
         {showBulkAdd && <BulkAddPartners onClose={handleCloseBulkAdd} />}
       </div>
     </AppContext.Provider>

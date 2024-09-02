@@ -21,9 +21,9 @@ export const generateSchedule = (state) => {
       const partner = selectPartner(partners);
       let contentType = selectContentType(preferences.contentTypes);
 
-      if (contentType === 'blog') {
+      if (contentType === 'Blog') {
         if (blogCount >= blogLimitPerWeek) {
-          contentType = 'tweet'; // Fallback to tweet if blog limit is reached
+          contentType = 'Tweet'; // Fallback to tweet if blog limit is reached
         } else {
           blogCount++;
         }

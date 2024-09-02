@@ -2,7 +2,7 @@ export const initialState = {
   partners: [],
   schedule: [],
   preferences: {
-    contentTypes: ['tweet', 'blog'],
+    contentTypes: ['Tweet', 'Blog'],
     timeSlots: ['morning', 'afternoon', 'evening'],
   },
   currentMonth: new Date(),
