@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { AppContext } from './index';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarPlus, Eye } from 'lucide-react'; // Import CalendarPlus and Eye icons
 import { getEventEmoji } from '../utils/eventUtils';
 
 export const CalendarView = ({ onEventClick }) => {
@@ -28,6 +28,11 @@ export const CalendarView = ({ onEventClick }) => {
   const handleNextMonth = () => {
     const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
     dispatch({ type: 'SET_CURRENT_MONTH', payload: newDate });
+  };
+
+  const handleAddToCalendar = (event) => {
+    // Implement the logic to add the event to the calendar
+    console.log("Adding to calendar:", event);
   };
 
   return (
@@ -58,10 +63,22 @@ export const CalendarView = ({ onEventClick }) => {
                   <div 
                     key={event.timeSlot} 
                     className="text-xs mt-1 p-1 rounded flex items-center border cursor-pointer"
-                    onClick={() => onEventClick(event)}
                   >
                     <span className="w-3 h-2 rounded mr-2" style={{backgroundColor: event.partner.color}}></span>
                     {getEventEmoji(event.contentType)} {event.partner.name} - {event.contentType} ({event.timeSlot})
+                    <div className='flex flex-col space-y-2'>
+                    <Button 
+                      className="ml-auto p-2" 
+                      onClick={() => onEventClick(event)}
+                    >
+                      <Eye size={12} />
+                    </Button>
+                    <Button 
+                      className="ml-2 p-2" 
+                      onClick={() => handleAddToCalendar(event)}
+                    >
+                      <CalendarPlus size={12} />
+                    </Button></div>
                   </div>
                 ))}
               </div>

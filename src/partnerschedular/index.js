@@ -45,26 +45,33 @@ export const PartnerSchedulingApp = () => {
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
-      <div className="p-4 max-w-6xl mx-auto">
+      <div className="p-4 mx-14 mx-auto">
         <h1 className="text-2xl font-bold mb-4">Partner Content Scheduling App</h1>
-        
-        <PartnerList />
-        <ScheduleGenerator onGenerate={handleGenerateSchedule} />
-        <CalendarView onEventClick={handleEventClick} />
-        
-        <Button 
-          onClick={handleExport}
-          className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Export to CSV
-        </Button>
 
-        <Button 
-          onClick={handleBulkAddClick}
-          className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Bulk Add Partners
-        </Button>
+        <div className="flex">
+          <div className="w-1/2 pr-2">
+            <PartnerList />
+
+          </div>
+          <div className="w-1/2 pl-2">
+            <Button
+              onClick={handleExport}
+              className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Export to CSV
+            </Button>
+
+            <Button
+              onClick={handleBulkAddClick}
+              className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Bulk Add Partners
+            </Button>
+            <ScheduleGenerator onGenerate={handleGenerateSchedule} />
+            <CalendarView onEventClick={handleEventClick} />
+          </div>
+        </div>
+
 
         <EventSidebar event={selectedEvent} onClose={handleCloseSidebar} />
         {showBulkAdd && <BulkAddPartners onClose={handleCloseBulkAdd} />}
