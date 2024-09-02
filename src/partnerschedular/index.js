@@ -29,10 +29,6 @@ export const PartnerSchedulingApp = () => {
   };
 
   const handleEventClick = (event) => {
-    const savedContent = localStorage.getItem(`event_${event.id}_content`);
-    if (savedContent) {
-      event.generatedContent = savedContent;
-    }
     setSelectedEvent(event);
   };
 

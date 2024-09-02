@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import OpenAI from 'openai';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { TemplateManager } from './TemplateManager';
+import { AppContext } from './index'; // Import AppContext
 
 export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
@@ -10,12 +11,17 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
   const [templates, setTemplates] = useState(['Template 1', 'Template 2']);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [apiKey, setApiKey] = useState(localStorage.getItem('chatgptApiKey') || '');
+  const [isLoading, setIsLoading] = useState(false); // Add loading state
+
+  const { dispatch } = useContext(AppContext); // Get dispatch from context
 
   useEffect(() => {
-    if (event && event.generatedContent) {
-      setGeneratedContent(event.generatedContent);
-    } else {
-      setGeneratedContent('');
+    if (event) {
+      if (event.generatedContent) {
+        setGeneratedContent(event.generatedContent);
+      } else {
+        setGeneratedContent('');
+      }
     }
   }, [event]);
 
@@ -37,6 +43,7 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
   };
 
   const handleGenerateContent = async () => {
+    setIsLoading(true); // Set loading state to true
     const isValid = await onGenerateContent(selectedTemplate, apiKey, event);
     if (isValid) {
       const client = new OpenAI({
@@ -53,12 +60,19 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
         const content = response.choices[0].message.content;
         setGeneratedContent(content);
         event.generatedContent = content; // Save the generated content to the event
-        localStorage.setItem(`event_${event.id}_content`, content); // Persist the content
+
+        // Dispatch action to update the event content in the state
+        dispatch({ type: 'UPDATE_EVENT_CONTENT', payload: { id: event.id, content } });
+
+        setIsLoading(false); // Set loading state to false
         return true;
       } catch (error) {
         console.error('Error generating content:', error);
+        setIsLoading(false); // Set loading state to false
         return false;
       }
+    } else {
+      setIsLoading(false); // Set loading state to false
     }
   };
 
@@ -84,8 +98,12 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
               <option key={index} value={template}>{template}</option>
             ))}
           </select>
-          <Button onClick={handleGenerateContent} className="mb-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">
-            Generate Content
+          <Button 
+            onClick={handleGenerateContent} 
+            className="mb-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+            disabled={isLoading} // Disable button while loading
+          >
+            {isLoading ? 'Generating...' : 'Generate Content'}
           </Button>
           <Button onClick={handleOpenTemplateManager} className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full">
             Manage Templates

@@ -49,6 +49,13 @@ export const appReducer = (state, action) => {
           partner.id === action.payload.id ? action.payload : partner
         ) 
       };
+    case 'UPDATE_EVENT_CONTENT':
+      return {
+        ...state,
+        schedule: state.schedule.map(event =>
+          event.id === action.payload.id ? { ...event, generatedContent: action.payload.content } : event
+        ),
+      };
     default:
       return state;
   }
