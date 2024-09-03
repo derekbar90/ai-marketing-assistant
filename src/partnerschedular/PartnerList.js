@@ -22,6 +22,7 @@ export const PartnerList = () => {
   const [partnerName, setPartnerName] = useState('');
   const [partnerColor, setPartnerColor] = useState(getRandomColor());
   const [partnerWeight, setPartnerWeight] = useState(1);
+  const [partnerTwitter, setPartnerTwitter] = useState(''); // New state for Twitter handle
   const [showColorPicker, setShowColorPicker] = useState(false);
 
   useEffect(() => {
@@ -30,11 +31,18 @@ export const PartnerList = () => {
   }, [state]);
 
   const handleAddPartner = () => {
-    const newPartner = { id: Date.now(), name: partnerName, color: partnerColor, weight: partnerWeight };
+    const newPartner = { 
+      id: Date.now(), 
+      name: partnerName, 
+      color: partnerColor, 
+      weight: partnerWeight,
+      twitter: partnerTwitter // Add Twitter handle to new partner
+    };
     dispatch({ type: 'ADD_PARTNER', payload: newPartner });
     setPartnerName('');
     setPartnerColor(getRandomColor());
     setPartnerWeight(1);
+    setPartnerTwitter(''); // Reset Twitter handle input
     setShowColorPicker(false);
   };
 
@@ -54,6 +62,11 @@ export const PartnerList = () => {
             value={partnerName} 
             onChange={(e) => setPartnerName(e.target.value)} 
             placeholder="Enter partner name" 
+          />
+          <Input 
+            value={partnerTwitter} 
+            onChange={(e) => setPartnerTwitter(e.target.value)} 
+            placeholder="Enter Twitter handle" 
           />
           <div className="relative">
             <div 
@@ -89,6 +102,16 @@ export const PartnerList = () => {
                   style={{ backgroundColor: partner.color }} 
                 />
                 <span className="text-lg">{partner.name}</span>
+                {partner.twitter && (
+                  <a 
+                    href={`https://twitter.com/${partner.twitter}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="ml-2 text-blue-500"
+                  >
+                    @{partner.twitter}
+                  </a>
+                )}
               </div>
               <Slider
                 defaultValue={[partner.weight]}
