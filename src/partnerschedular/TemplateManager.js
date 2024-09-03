@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/Modal';
+import { AppContext } from './index'; // Import AppContext
 
-export const TemplateManager = ({ templates, setTemplates, onClose }) => {
+export const TemplateManager = ({ onClose }) => {
+  const { state, dispatch } = useContext(AppContext); // Get state and dispatch from context
   const [newTemplateTitle, setNewTemplateTitle] = useState('');
   const [newTemplateContent, setNewTemplateContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -10,21 +12,25 @@ export const TemplateManager = ({ templates, setTemplates, onClose }) => {
 
   const handleAddTemplate = () => {
     if (isEditing) {
-      const updatedTemplates = [...templates];
-      updatedTemplates[editIndex] = { title: newTemplateTitle, content: newTemplateContent };
-      setTemplates(updatedTemplates);
+      dispatch({
+        type: 'UPDATE_TEMPLATE',
+        payload: { index: editIndex, template: { title: newTemplateTitle, content: newTemplateContent } },
+      });
       setIsEditing(false);
       setEditIndex(null);
     } else {
-      setTemplates([...templates, { title: newTemplateTitle, content: newTemplateContent }]);
+      dispatch({
+        type: 'ADD_TEMPLATE',
+        payload: { title: newTemplateTitle, content: newTemplateContent },
+      });
     }
     setNewTemplateTitle('');
     setNewTemplateContent('');
   };
 
   const handleEditTemplate = (index) => {
-    setNewTemplateTitle(templates[index].title);
-    setNewTemplateContent(templates[index].content);
+    setNewTemplateTitle(state.templates[index].title);
+    setNewTemplateContent(state.templates[index].content);
     setIsEditing(true);
     setEditIndex(index);
   };
@@ -50,7 +56,7 @@ export const TemplateManager = ({ templates, setTemplates, onClose }) => {
       </Button>
       <h3 className="text-lg font-bold mt-4">Edit Templates</h3>
       <ul>
-        {templates.map((template, index) => (
+        {state.templates.map((template, index) => (
           <li key={index} className="flex justify-between items-center mb-2">
             <div>
               <strong>{template.title}</strong>

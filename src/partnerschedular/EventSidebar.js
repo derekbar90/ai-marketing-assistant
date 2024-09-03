@@ -8,7 +8,6 @@ import { fetchLiveData } from '../utils/twitterClient'; // Import fetchLiveData
 
 export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
-  const [templates, setTemplates] = useState(getTemplates());
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [apiKey, setApiKey] = useState(localStorage.getItem('chatgptApiKey') || '');
   const [isLoading, setIsLoading] = useState(false); // Add loading state
@@ -130,11 +129,11 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
           <p><strong>Date:</strong> {new Date(event.date).toDateString()}</p>
           <select
             value={selectedTemplate}
-            onChange={(e) => setSelectedTemplate(templates.find(template => template.title === e.target.value))}
+            onChange={(e) => setSelectedTemplate(state.templates.find(template => template.title === e.target.value))}
             className="mb-2 p-2 border rounded w-full"
           >
             <option value="" disabled>Select a template</option>
-            {templates.map((template, index) => (
+            {state.templates && state.templates.map((template, index) => (
               <option key={index} value={template.title}>{template.title}</option>
             ))}
           </select>
@@ -187,11 +186,7 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
         </CardContent>
       </Card>
       {isTemplateManagerOpen && (
-        <TemplateManager
-          templates={templates}
-          setTemplates={setTemplates}
-          onClose={handleCloseTemplateManager}
-        />
+        <TemplateManager onClose={handleCloseTemplateManager} />
       )}
     </div>
   );
