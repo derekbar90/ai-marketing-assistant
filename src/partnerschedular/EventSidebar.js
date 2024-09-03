@@ -7,7 +7,7 @@ import { AppContext } from './index'; // Import AppContext
 
 export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
-  const [templates, setTemplates] = useState(['Template 1', 'Template 2']);
+  const [templates, setTemplates] = useState([{ title: 'Template 1', content: 'Content 1' }, { title: 'Template 2', content: 'Content 2' }]);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [apiKey, setApiKey] = useState(localStorage.getItem('chatgptApiKey') || '');
   const [isLoading, setIsLoading] = useState(false); // Add loading state
@@ -40,39 +40,60 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
   };
 
   const handleGenerateContent = async () => {
-    setIsLoading(true); // Set loading state to true
-    console.log('Generating content for event:', event); // Log the event object
-    const isValid = await onGenerateContent(selectedTemplate, apiKey, event);
-    if (isValid) {
+    setIsLoading(true);
+    console.log('Generating content for event:', event);
+  
+    try {
+      const isValid = await onGenerateContent(selectedTemplate, apiKey, event);
+      if (!isValid) {
+        throw new Error('Invalid generation parameters');
+      }
+  
       const client = new OpenAI({
         apiKey: apiKey,
         dangerouslyAllowBrowser: true,
       });
-
-      try {
-        const response = await client.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: `${selectedTemplate}\n\nEvent Details:\nPartner: ${event.partner.name}\nContent Type: ${event.contentType}\nTime Slot: ${event.timeSlot}\nDate: ${new Date(event.date).toDateString()}` }],
-        });
-
-        const content = response.choices[0].message.content;
-        console.log('Generated content:', content); // Log the generated content
-
-        // Dispatch action to update the event content and approval status in the state
-        dispatch({ type: 'UPDATE_EVENT_CONTENT', payload: { id: event.id, content, isApproved: false } });
-
-        setIsLoading(false); // Set loading state to false
-        return true;
-      } catch (error) {
-        console.error('Error generating content:', error);
-        setIsLoading(false); // Set loading state to false
-        return false;
-      }
-    } else {
-      setIsLoading(false); // Set loading state to false
+  
+      const systemPrompt = `You are an AI assistant specialized in generating content for events. 
+      Your task is to create engaging and relevant content based on the provided template and event details. 
+      Ensure the content is appropriate for the partner, content type, and occasion.`;
+  
+      const userPrompt = `Template: ${selectedTemplate.content}
+  
+  Event Details:
+  Partner: ${event.partner.name}
+  Content Type: ${event.contentType}
+  Time Slot: ${event.timeSlot}
+  Date: ${new Date(event.date).toDateString()}
+  
+  Please generate content that fits this template and these event details. 
+  The content should be engaging, relevant, and tailored to the specific partner and content type.`;
+  
+      const response = await client.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 500,
+      });
+  
+      const content = response.choices[0].message.content;
+      console.log('Generated content:', content);
+  
+      dispatch({ type: 'UPDATE_EVENT_CONTENT', payload: { id: event.id, content, isApproved: false } });
+  
+      return true;
+    } catch (error) {
+      console.error('Error generating content:', error);
+      // Optionally, you can dispatch an action to update the UI with the error message
+      dispatch({ type: 'SET_ERROR', payload: error.message });
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   };
-
   const handleApiKeyChange = (e) => {
     setApiKey(e.target.value);
   };
@@ -104,12 +125,12 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
           <p><strong>Date:</strong> {new Date(event.date).toDateString()}</p>
           <select
             value={selectedTemplate}
-            onChange={(e) => setSelectedTemplate(e.target.value)}
+            onChange={(e) => setSelectedTemplate(templates.find(template => template.title === e.target.value))}
             className="mb-2 p-2 border rounded w-full"
           >
             <option value="" disabled>Select a template</option>
             {templates.map((template, index) => (
-              <option key={index} value={template}>{template}</option>
+              <option key={index} value={template.title}>{template.title}</option>
             ))}
           </select>
           <input

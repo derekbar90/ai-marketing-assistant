@@ -65,23 +65,36 @@ export const CalendarView = ({ onEventClick }) => {
                 {events.map(event => (
                   <div 
                     key={event.timeSlot} 
-                    className={`text-xs mt-1 p-1 rounded flex items-center border cursor-pointer ${event.isApproved ? 'bg-green-100' : ''}`} // Change background color if approved
+                    className={`text-xs mt-1 p-1 rounded flex items-center border cursor-pointer ${event.isApproved ? 'bg-green-100' : 'bg-transparent'}`}
+                    style={{ borderBottom: `4px solid ${event.partner.color}` }}
                   >
-                    <span className="w-3 h-2 rounded mr-2" style={{backgroundColor: event.partner.color}}></span>
-                    {getEventEmoji(event.contentType)} {event.partner.name} - {event.contentType} ({event.timeSlot})
-                    <div className='flex flex-col space-y-2'>
-                    <Button 
-                      className="ml-auto p-2" 
-                      onClick={() => onEventClick(event)}
-                    >
-                      <Eye size={12} />
-                    </Button>
-                    <Button 
-                      className="ml-2 p-2" 
-                      onClick={() => handleAddToCalendar(event)}
-                    >
-                      <CalendarPlus size={12} />
-                    </Button></div>
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex items-center space-x-1">
+                        
+                        <span className="font-semibold">{event.partner.name}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                      <span>{getEventEmoji(event.contentType)}</span> <span className="italic">{event.contentType}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                      <span>({event.timeSlot})</span>
+                      </div>
+
+                    </div>
+                    <div className="flex flex-col space-y-2 ml-auto">
+                      <Button 
+                        className="p-2" 
+                        onClick={() => onEventClick(event)}
+                      >
+                        <Eye size={12} />
+                      </Button>
+                      <Button 
+                        className="p-2" 
+                        onClick={() => handleAddToCalendar(event)}
+                      >
+                        <CalendarPlus size={12} />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
