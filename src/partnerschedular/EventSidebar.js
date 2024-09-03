@@ -7,6 +7,41 @@ import { TemplateManager } from './TemplateManager';
 import { AppContext } from './index'; // Import AppContext
 import { fetchLiveData } from '../utils/twitterClient'; // Import fetchLiveData
 
+import { useRef } from 'react';
+
+const TwitterTimeline = () => {
+  const timelineRef = useRef(null);
+
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://platform.twitter.com/widgets.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      if (window.twttr && timelineRef.current) {
+        window.twttr.widgets.load(timelineRef.current);
+      }
+    };
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  return (
+    <div ref={timelineRef}>
+      <a 
+        className="twitter-timeline" 
+        data-dnt="true" 
+        href="https://twitter.com/XDevelopers?ref_src=twsrc%5Etfw"
+      >
+        Tweets by XDevelopers
+      </a>
+    </div>
+  );
+};
+
 export const EventSidebar = ({ event, onClose }) => {
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState('');
@@ -139,6 +174,20 @@ export const EventSidebar = ({ event, onClose }) => {
         </CardHeader>
         <CardContent>
           <p><strong>Partner:</strong> {event.partner.name}</p>
+          {event.partner.twitter && (
+            <p>
+              <strong>Twitter:</strong> 
+              <a 
+                href={`https://twitter.com/${event.partner.twitter}`} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="ml-2 text-blue-500"
+              >
+                @{event.partner.twitter}
+              </a>
+            </p>
+          )}
+          <TwitterTimeline />
           <p><strong>Content Type:</strong> {event.contentType}</p>
           <p><strong>Time Slot:</strong> {event.timeSlot}</p>
           <p><strong>Date:</strong> {new Date(event.date).toDateString()}</p>
@@ -158,7 +207,7 @@ export const EventSidebar = ({ event, onClose }) => {
             className="mb-2 p-2 border rounded w-full"
           >
             {contentSizeOptions.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
+              <option key={option.label} value={option.value}>{option.label}</option>
             ))}
           </select>
           <input
