@@ -6,41 +6,7 @@ import { Button } from '../components/ui/button';
 import { TemplateManager } from './TemplateManager';
 import { AppContext } from './index'; // Import AppContext
 import { fetchLiveData } from '../utils/twitterClient'; // Import fetchLiveData
-
-import { useRef } from 'react';
-
-const TwitterTimeline = () => {
-  const timelineRef = useRef(null);
-
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://platform.twitter.com/widgets.js";
-    script.async = true;
-    document.body.appendChild(script);
-
-    script.onload = () => {
-      if (window.twttr && timelineRef.current) {
-        window.twttr.widgets.load(timelineRef.current);
-      }
-    };
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
-  return (
-    <div ref={timelineRef}>
-      <a 
-        className="twitter-timeline" 
-        data-dnt="true" 
-        href="https://twitter.com/XDevelopers?ref_src=twsrc%5Etfw"
-      >
-        Tweets by XDevelopers
-      </a>
-    </div>
-  );
-};
+import { TwitterTimeline } from './twitterTimeline';
 
 export const EventSidebar = ({ event, onClose }) => {
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
@@ -50,6 +16,7 @@ export const EventSidebar = ({ event, onClose }) => {
   const [isApproved, setIsApproved] = useState(false); // Initialize with false
   const [liveData, setLiveData] = useState([]); // State for live data
   const [contentSize, setContentSize] = useState(500); // State for content size
+  const [additionalContext, setAdditionalContext] = useState(''); // State for additional context
 
   const contentSizeOptions = [
     { label: 'Micro', value: 50 },
@@ -115,6 +82,8 @@ export const EventSidebar = ({ event, onClose }) => {
   Content Type: ${event.contentType}
   Time Slot: ${event.timeSlot}
   Date: ${new Date(event.date).toDateString()}
+  
+  Additional Context: ${additionalContext}
   
   Please generate content that fits this template and these event details. 
   The content should be engaging, relevant, and tailored to the specific partner and content type.`;
@@ -187,7 +156,6 @@ export const EventSidebar = ({ event, onClose }) => {
               </a>
             </p>
           )}
-          <TwitterTimeline />
           <p><strong>Content Type:</strong> {event.contentType}</p>
           <p><strong>Time Slot:</strong> {event.timeSlot}</p>
           <p><strong>Date:</strong> {new Date(event.date).toDateString()}</p>
@@ -207,7 +175,7 @@ export const EventSidebar = ({ event, onClose }) => {
             className="mb-2 p-2 border rounded w-full"
           >
             {contentSizeOptions.map((option) => (
-              <option key={option.label} value={option.value}>{option.label}</option>
+              <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
           <input
@@ -223,6 +191,12 @@ export const EventSidebar = ({ event, onClose }) => {
           >
             Save API Key
           </Button>
+          <textarea
+            value={additionalContext}
+            onChange={(e) => setAdditionalContext(e.target.value)}
+            placeholder="Enter additional context"
+            className="mb-2 p-2 border rounded w-full"
+          />
           <Button 
             onClick={handleGenerateContent} 
             className="mb-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
@@ -246,16 +220,7 @@ export const EventSidebar = ({ event, onClose }) => {
               <ReactMarkdown>{updatedEvent.generatedContent}</ReactMarkdown> {/* Render markdown content */}
             </div>
           )}
-          {liveData.length > 0 && (
-            <div className="mt-4 p-2 border rounded bg-gray-100">
-              <h3 className="text-lg font-bold">Live Data</h3>
-              <ul>
-                {liveData.map((tweet, index) => (
-                  <li key={index}>{tweet.text}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <TwitterTimeline twitterHandle={event.partner.twitter} />
         </CardContent>
       </Card>
       {isTemplateManagerOpen && (
