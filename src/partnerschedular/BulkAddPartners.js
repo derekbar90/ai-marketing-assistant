@@ -11,9 +11,15 @@ export const BulkAddPartners = ({ onClose }) => {
   const handleBulkAdd = () => {
     const lines = bulkInput.split('\n');
     lines.forEach(line => {
-      const [name, color, weight] = line.split(',').map(item => item.trim());
+      const [name, color, weight, twitter] = line.split(',').map(item => item.trim());
       if (name && color && weight) {
-        const newPartner = { id: Date.now() + Math.random(), name, color, weight: parseInt(weight, 10) };
+        const newPartner = { 
+          id: Date.now() + Math.random(), 
+          name, 
+          color, 
+          weight: parseInt(weight, 10),
+          twitter: twitter || '' // Add Twitter handle if provided
+        };
         dispatch({ type: 'ADD_PARTNER', payload: newPartner });
       }
     });
@@ -31,7 +37,7 @@ export const BulkAddPartners = ({ onClose }) => {
           <Textarea 
             value={bulkInput} 
             onChange={(e) => setBulkInput(e.target.value)} 
-            placeholder="Enter partners as 'name, color, weight' on each line" 
+            placeholder="Enter partners as 'name, color, weight, twitter' on each line" 
             rows={10}
           />
           <Button onClick={handleBulkAdd} className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">

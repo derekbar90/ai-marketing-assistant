@@ -51,6 +51,11 @@ export const PartnerList = () => {
     dispatch({ type: 'UPDATE_PARTNER_WEIGHT', payload: updatedPartner });
   };
 
+  const handleTwitterChange = (id, newTwitter) => {
+    const updatedPartner = { ...state.partners.find(partner => partner.id === id), twitter: newTwitter };
+    dispatch({ type: 'UPDATE_PARTNER_TWITTER', payload: updatedPartner });
+  };
+
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -112,6 +117,12 @@ export const PartnerList = () => {
                     @{partner.twitter}
                   </a>
                 )}
+                <Input 
+                  value={partner.twitter || ''} 
+                  onChange={(e) => handleTwitterChange(partner.id, e.target.value)} 
+                  placeholder="Edit Twitter handle" 
+                  className="ml-2"
+                />
               </div>
               <Slider
                 defaultValue={[partner.weight]}

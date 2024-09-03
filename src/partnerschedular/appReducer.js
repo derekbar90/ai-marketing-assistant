@@ -169,6 +169,13 @@ export const appReducer = (state, action) => {
           index === action.payload.index ? action.payload.template : template
         ),
       };
+    case 'UPDATE_PARTNER_TWITTER':
+      return { 
+        ...state, 
+        partners: state.partners.map(partner => 
+          partner.id === action.payload.id ? action.payload : partner
+        ) 
+      };
     default:
       return state;
   }
