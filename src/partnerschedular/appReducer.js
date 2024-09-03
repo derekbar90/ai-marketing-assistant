@@ -53,7 +53,14 @@ export const appReducer = (state, action) => {
       return {
         ...state,
         schedule: state.schedule.map(event =>
-          event.id === action.payload.id ? { ...event, generatedContent: action.payload.content } : event
+          event.id === action.payload.id ? { ...event, generatedContent: action.payload.content, isApproved: action.payload.isApproved } : event
+        ),
+      };
+    case 'APPROVE_EVENT_CONTENT':
+      return {
+        ...state,
+        schedule: state.schedule.map(event =>
+          event.id === action.payload.id ? { ...event, isApproved: true } : event
         ),
       };
     default:

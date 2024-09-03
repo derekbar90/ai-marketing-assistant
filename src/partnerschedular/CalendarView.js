@@ -65,7 +65,7 @@ export const CalendarView = ({ onEventClick }) => {
                 {events.map(event => (
                   <div 
                     key={event.timeSlot} 
-                    className="text-xs mt-1 p-1 rounded flex items-center border cursor-pointer"
+                    className={`text-xs mt-1 p-1 rounded flex items-center border cursor-pointer ${event.isApproved ? 'bg-green-100' : ''}`} // Change background color if approved
                   >
                     <span className="w-3 h-2 rounded mr-2" style={{backgroundColor: event.partner.color}}></span>
                     {getEventEmoji(event.contentType)} {event.partner.name} - {event.contentType} ({event.timeSlot})

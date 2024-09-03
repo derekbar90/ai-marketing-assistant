@@ -11,6 +11,7 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [apiKey, setApiKey] = useState(localStorage.getItem('chatgptApiKey') || '');
   const [isLoading, setIsLoading] = useState(false); // Add loading state
+  const [isApproved, setIsApproved] = useState(false); // Initialize with false
 
   const { state, dispatch } = useContext(AppContext); // Get state and dispatch from context
 
@@ -22,8 +23,10 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
   }, []);
 
   useEffect(() => {
-    // Re-render when event prop changes
-    console.log('Event prop changed:', event); // Log the event object
+    if (event) {
+      setIsApproved(event.isApproved || false); // Update approval state when event changes
+      console.log('Event prop changed:', event); // Log the event object
+    }
   }, [event]);
 
   if (!event) return null;
@@ -55,8 +58,8 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
         const content = response.choices[0].message.content;
         console.log('Generated content:', content); // Log the generated content
 
-        // Dispatch action to update the event content in the state
-        dispatch({ type: 'UPDATE_EVENT_CONTENT', payload: { id: event.id, content } });
+        // Dispatch action to update the event content and approval status in the state
+        dispatch({ type: 'UPDATE_EVENT_CONTENT', payload: { id: event.id, content, isApproved: false } });
 
         setIsLoading(false); // Set loading state to false
         return true;
@@ -68,6 +71,20 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
     } else {
       setIsLoading(false); // Set loading state to false
     }
+  };
+
+  const handleApiKeyChange = (e) => {
+    setApiKey(e.target.value);
+  };
+
+  const handleSaveApiKey = () => {
+    localStorage.setItem('chatgptApiKey', apiKey);
+    alert('API Key saved!');
+  };
+
+  const handleApproveContent = () => {
+    dispatch({ type: 'APPROVE_EVENT_CONTENT', payload: { id: event.id } });
+    setIsApproved(true);
   };
 
   // Find the updated event from the state
@@ -95,12 +112,32 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
               <option key={index} value={template}>{template}</option>
             ))}
           </select>
+          <input
+            type="text"
+            value={apiKey}
+            onChange={handleApiKeyChange}
+            placeholder="Enter API Key"
+            className="mb-2 p-2 border rounded w-full"
+          />
+          <Button 
+            onClick={handleSaveApiKey} 
+            className="mb-2 bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded w-full"
+          >
+            Save API Key
+          </Button>
           <Button 
             onClick={handleGenerateContent} 
             className="mb-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
             disabled={isLoading} // Disable button while loading
           >
             {isLoading ? 'Generating...' : 'Generate Content'}
+          </Button>
+          <Button 
+            onClick={handleApproveContent} 
+            className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
+            disabled={isApproved} // Disable button if already approved
+          >
+            {isApproved ? 'Approved' : 'Approve Content'}
           </Button>
           <Button onClick={handleOpenTemplateManager} className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full">
             Manage Templates
