@@ -10,6 +10,7 @@ import { generateSchedule } from './scheduleUtils';
 import { resolveConflicts } from './conflictResolution';
 import { exportToCSV } from './exportUtils';
 import { Button } from './../components/ui/button';
+import { generateUniqueId } from '../utils/eventUtils'; // Import generateUniqueId
 
 export const AppContext = createContext();
 
@@ -19,7 +20,10 @@ export const PartnerSchedulingApp = () => {
   const [showBulkAdd, setShowBulkAdd] = useState(false);
 
   const handleGenerateSchedule = () => {
-    const newSchedule = generateSchedule(state);
+    const newSchedule = generateSchedule(state).map(event => ({
+      ...event,
+      id: generateUniqueId(), // Ensure each event has a unique ID
+    }));
     const resolvedSchedule = resolveConflicts(newSchedule);
     dispatch({ type: 'SET_SCHEDULE', payload: resolvedSchedule });
   };
@@ -57,7 +61,7 @@ export const PartnerSchedulingApp = () => {
 
     try {
       const response = await client.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4',
         messages: [{ role: 'user', content: `${template}\n\nEvent Details:\nPartner: ${event.partner.name}\nContent Type: ${event.contentType}\nTime Slot: ${event.timeSlot}\nDate: ${new Date(event.date).toDateString()}` }],
       });
 
