@@ -14,6 +14,21 @@ export const EventSidebar = ({ event, onClose }) => {
   const [isLoading, setIsLoading] = useState(false); // Add loading state
   const [isApproved, setIsApproved] = useState(false); // Initialize with false
   const [liveData, setLiveData] = useState([]); // State for live data
+  const [contentSize, setContentSize] = useState(500); // State for content size
+
+  const contentSizeOptions = [
+    { label: 'Micro', value: 50 },
+    { label: 'Tiny', value: 100 },
+    { label: 'Small', value: 200 },
+    { label: 'Twitter', value: 100 },
+    { label: 'Medium', value: 500 },
+    { label: 'Large', value: 800 },
+    { label: 'XL', value: 1200 },
+    { label: 'XXL', value: 2000 },
+    { label: 'Essay', value: 3000 },
+    { label: 'Article', value: 5000 },
+    { label: 'Long-form', value: 8000 }
+  ];
 
   const { state, dispatch } = useContext(AppContext); // Get state and dispatch from context
 
@@ -68,15 +83,18 @@ export const EventSidebar = ({ event, onClose }) => {
   
   Please generate content that fits this template and these event details. 
   The content should be engaging, relevant, and tailored to the specific partner and content type.`;
+
+      // Use contentSize directly for max_tokens
+      const maxTokens = contentSize;
   
       const response = await client.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: maxTokens,
       });
   
       const content = response.choices[0].message.content;
@@ -132,6 +150,15 @@ export const EventSidebar = ({ event, onClose }) => {
             <option value="" disabled>Select a template</option>
             {state.templates && state.templates.map((template, index) => (
               <option key={index} value={template.title}>{template.title}</option>
+            ))}
+          </select>
+          <select
+            value={contentSize}
+            onChange={(e) => setContentSize(parseInt(e.target.value))}
+            className="mb-2 p-2 border rounded w-full"
+          >
+            {contentSizeOptions.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
           <input
