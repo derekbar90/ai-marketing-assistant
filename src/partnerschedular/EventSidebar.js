@@ -4,14 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { TemplateManager } from './TemplateManager';
 import { AppContext } from './index'; // Import AppContext
+import { fetchLiveData } from '../utils/twitterClient'; // Import fetchLiveData
 
 export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
-  const [templates, setTemplates] = useState([{ title: 'Template 1', content: 'Content 1' }, { title: 'Template 2', content: 'Content 2' }]);
+  const [templates, setTemplates] = useState(getTemplates());
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [apiKey, setApiKey] = useState(localStorage.getItem('chatgptApiKey') || '');
   const [isLoading, setIsLoading] = useState(false); // Add loading state
   const [isApproved, setIsApproved] = useState(false); // Initialize with false
+  const [liveData, setLiveData] = useState([]); // State for live data
 
   const { state, dispatch } = useContext(AppContext); // Get state and dispatch from context
 
@@ -26,6 +28,9 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
     if (event) {
       setIsApproved(event.isApproved || false); // Update approval state when event changes
       console.log('Event prop changed:', event); // Log the event object
+
+      // Fetch live data for the partner
+      fetchLiveData(event.partner.name).then(data => setLiveData(data));
     }
   }, [event]);
 
@@ -167,6 +172,16 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
             <div className="mt-4 p-2 border rounded bg-gray-100">
               <h3 className="text-lg font-bold">Generated Content</h3>
               <p>{updatedEvent.generatedContent}</p>
+            </div>
+          )}
+          {liveData.length > 0 && (
+            <div className="mt-4 p-2 border rounded bg-gray-100">
+              <h3 className="text-lg font-bold">Live Data</h3>
+              <ul>
+                {liveData.map((tweet, index) => (
+                  <li key={index}>{tweet.text}</li>
+                ))}
+              </ul>
             </div>
           )}
         </CardContent>
