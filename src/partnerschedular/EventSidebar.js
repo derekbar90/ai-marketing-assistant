@@ -144,26 +144,19 @@ export const EventSidebar = ({ event, onClose }) => {
         dangerouslyAllowBrowser: true,
       });
   
-      const systemPrompt = `You are an AI assistant specialized in generating content ideas for events. 
-      Your task is to create engaging and relevant content ideas based on the provided template and event details. 
-      Ensure the ideas are appropriate for the partner, content type, and occasion. Only provide a title for each idea.
-      Provide the ideas as a JSON array of strings.`;
+      const systemPrompt = `You are an AI assistant specialized in generating content titles for posts. Review the tweets and additional context and provide a title for each idea.
+      Ensure the ideas are appropriate for the partner, content type, and occasion. Only provide a title for each idea. Do not repeat ideas and concepts.
+      Provide the ideas as a JSON array of strings. { titles: ["title1", "title2", "title3", ...] }`;
   
       const userPrompt = `Template: ${selectedTemplate.content}
   
-  Event Details:
   Partner: ${event.partner.name}
   Content Type: ${event.contentType}
-  Time Slot: ${event.timeSlot}
-  Date: ${new Date(event.date).toDateString()}
   
   Recent Partner (Tweets): ${additionalContext}
   
   User Provided Context: ${actualAdditionalContext}
-  
-  Please generate content ideas that fit this template and these event details. 
-  The ideas should be engaging, relevant, and tailored to the specific partner and content type. 
-  Return the ideas as a JSON array of strings.`;
+  `;
   
       const response = await client.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -178,7 +171,7 @@ export const EventSidebar = ({ event, onClose }) => {
   
       const responseContent = response.choices[0].message.content;
       const parsedResponse = JSON.parse(responseContent);
-      const ideas = parsedResponse.ideas;
+      const ideas = parsedResponse.titles;
       if (!Array.isArray(ideas)) {
         throw new Error('Invalid response format');
       }
@@ -193,6 +186,7 @@ export const EventSidebar = ({ event, onClose }) => {
       setIsLoading(false);
     }
   };
+
 
   const handleSelectIdea = (idea) => {
     setSelectedIdea(idea);
