@@ -57,11 +57,15 @@ export const PartnerSchedulingApp = () => {
 
     try {
       const response = await client.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: `${template}\n\nEvent Details:\nPartner: ${event.partner.name}\nContent Type: ${event.contentType}\nTime Slot: ${event.timeSlot}\nDate: ${new Date(event.date).toDateString()}` }],
       });
 
-      console.log('Generated content:', response.choices[0].message.content);
+      const content = response.choices[0].message.content;
+
+      // Dispatch action to update the event content in the state
+      dispatch({ type: 'UPDATE_EVENT_CONTENT', payload: { id: event.id, content } });
+
       return true;
     } catch (error) {
       console.error('Error generating content:', error);

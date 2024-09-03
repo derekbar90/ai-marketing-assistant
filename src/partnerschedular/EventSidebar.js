@@ -7,23 +7,12 @@ import { AppContext } from './index'; // Import AppContext
 
 export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
-  const [generatedContent, setGeneratedContent] = useState('');
   const [templates, setTemplates] = useState(['Template 1', 'Template 2']);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [apiKey, setApiKey] = useState(localStorage.getItem('chatgptApiKey') || '');
   const [isLoading, setIsLoading] = useState(false); // Add loading state
 
   const { dispatch } = useContext(AppContext); // Get dispatch from context
-
-  useEffect(() => {
-    if (event) {
-      if (event.generatedContent) {
-        setGeneratedContent(event.generatedContent);
-      } else {
-        setGeneratedContent('');
-      }
-    }
-  }, [event]);
 
   useEffect(() => {
     const storedApiKey = localStorage.getItem('chatgptApiKey');
@@ -58,8 +47,6 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
         });
 
         const content = response.choices[0].message.content;
-        setGeneratedContent(content);
-        event.generatedContent = content; // Save the generated content to the event
 
         // Dispatch action to update the event content in the state
         dispatch({ type: 'UPDATE_EVENT_CONTENT', payload: { id: event.id, content } });
@@ -108,10 +95,10 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
           <Button onClick={handleOpenTemplateManager} className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full">
             Manage Templates
           </Button>
-          {generatedContent && (
+          {event.generatedContent && (
             <div className="mt-4 p-2 border rounded bg-gray-100">
               <h3 className="text-lg font-bold">Generated Content</h3>
-              <p>{generatedContent}</p>
+              <p>{event.generatedContent}</p>
             </div>
           )}
         </CardContent>
