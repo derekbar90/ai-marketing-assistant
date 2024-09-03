@@ -48,11 +48,6 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
     console.log('Generating content for event:', event);
   
     try {
-      const isValid = await onGenerateContent(selectedTemplate, apiKey, event);
-      if (!isValid) {
-        throw new Error('Invalid generation parameters');
-      }
-  
       const client = new OpenAI({
         apiKey: apiKey,
         dangerouslyAllowBrowser: true,
@@ -116,7 +111,7 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
   const updatedEvent = state.schedule.find(e => e.id === event.id);
 
   return (
-    <div className="fixed top-0 right-0 w-1/3 h-full bg-white shadow-lg z-50">
+    <div className="fixed top-0 left-0 w-1/3 h-full bg-white shadow-lg z-50">
       <Card className="h-full">
         <CardHeader>
           <CardTitle>Event Details</CardTitle>

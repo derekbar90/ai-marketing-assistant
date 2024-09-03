@@ -1,10 +1,8 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/Modal';
-import { AppContext } from './index'; // Import AppContext
 
-export const TemplateManager = ({ onClose }) => {
-  const { state, dispatch } = useContext(AppContext); // Get state and dispatch from context
+export const TemplateManager = ({ templates, setTemplates, onClose }) => {
   const [newTemplateTitle, setNewTemplateTitle] = useState('');
   const [newTemplateContent, setNewTemplateContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -12,25 +10,21 @@ export const TemplateManager = ({ onClose }) => {
 
   const handleAddTemplate = () => {
     if (isEditing) {
-      dispatch({
-        type: 'UPDATE_TEMPLATE',
-        payload: { index: editIndex, template: { title: newTemplateTitle, content: newTemplateContent } },
-      });
+      const updatedTemplates = [...templates];
+      updatedTemplates[editIndex] = { title: newTemplateTitle, content: newTemplateContent };
+      setTemplates(updatedTemplates);
       setIsEditing(false);
       setEditIndex(null);
     } else {
-      dispatch({
-        type: 'ADD_TEMPLATE',
-        payload: { title: newTemplateTitle, content: newTemplateContent },
-      });
+      setTemplates([...templates, { title: newTemplateTitle, content: newTemplateContent }]);
     }
     setNewTemplateTitle('');
     setNewTemplateContent('');
   };
 
   const handleEditTemplate = (index) => {
-    setNewTemplateTitle(state.templates[index].title);
-    setNewTemplateContent(state.templates[index].content);
+    setNewTemplateTitle(templates[index].title);
+    setNewTemplateContent(templates[index].content);
     setIsEditing(true);
     setEditIndex(index);
   };
@@ -56,7 +50,7 @@ export const TemplateManager = ({ onClose }) => {
       </Button>
       <h3 className="text-lg font-bold mt-4">Edit Templates</h3>
       <ul>
-        {state.templates.map((template, index) => (
+        {templates.map((template, index) => (
           <li key={index} className="flex justify-between items-center mb-2">
             <div>
               <strong>{template.title}</strong>
