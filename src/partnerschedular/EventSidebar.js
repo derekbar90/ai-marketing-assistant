@@ -17,6 +17,7 @@ export const EventSidebar = ({ event, onClose }) => {
   const [liveData, setLiveData] = useState([]); // State for live data
   const [contentSize, setContentSize] = useState(500); // State for content size
   const [additionalContext, setAdditionalContext] = useState(''); // State for additional context
+  const [actualAdditionalContext, setActualAdditionalContext] = useState(''); // State for actual additional context
 
   const contentSizeOptions = [
     { label: 'Micro', value: 50 },
@@ -83,7 +84,9 @@ export const EventSidebar = ({ event, onClose }) => {
   Time Slot: ${event.timeSlot}
   Date: ${new Date(event.date).toDateString()}
   
-  Additional Context: ${additionalContext}
+  Recent Partner (Tweets): ${additionalContext}
+
+  User Provided Context: ${actualAdditionalContext}
   
   Please generate content that fits this template and these event details. 
   The content should be engaging, relevant, and tailored to the specific partner and content type.`;
@@ -194,7 +197,13 @@ export const EventSidebar = ({ event, onClose }) => {
           <textarea
             value={additionalContext}
             onChange={(e) => setAdditionalContext(e.target.value)}
-            placeholder="Enter additional context"
+            placeholder="Enter additional context (Tweets)"
+            className="mb-2 p-2 border rounded w-full"
+          />
+          <textarea
+            value={actualAdditionalContext}
+            onChange={(e) => setActualAdditionalContext(e.target.value)}
+            placeholder="Enter actual additional context"
             className="mb-2 p-2 border rounded w-full"
           />
           <Button 
