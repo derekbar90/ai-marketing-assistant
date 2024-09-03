@@ -1,23 +1,25 @@
 import React, { useState, useEffect, useContext } from 'react';
 import OpenAI from 'openai';
-import ReactMarkdown from 'react-markdown'; // Import ReactMarkdown
+import ReactMarkdown from 'react-markdown';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { TemplateManager } from './TemplateManager';
-import { AppContext } from './index'; // Import AppContext
-import { fetchLiveData } from '../utils/twitterClient'; // Import fetchLiveData
+import { AppContext } from './index';
+import { fetchLiveData } from '../utils/twitterClient';
 import { TwitterTimeline } from './twitterTimeline';
 
 export const EventSidebar = ({ event, onClose }) => {
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [apiKey, setApiKey] = useState(localStorage.getItem('chatgptApiKey') || '');
-  const [isLoading, setIsLoading] = useState(false); // Add loading state
-  const [isApproved, setIsApproved] = useState(false); // Initialize with false
-  const [liveData, setLiveData] = useState([]); // State for live data
-  const [contentSize, setContentSize] = useState(500); // State for content size
-  const [additionalContext, setAdditionalContext] = useState(''); // State for additional context
-  const [actualAdditionalContext, setActualAdditionalContext] = useState(''); // State for actual additional context
+  const [isLoading, setIsLoading] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
+  const [liveData, setLiveData] = useState([]);
+  const [contentSize, setContentSize] = useState(500);
+  const [additionalContext, setAdditionalContext] = useState('');
+  const [actualAdditionalContext, setActualAdditionalContext] = useState('');
+  const [contentIdeas, setContentIdeas] = useState([]);
+  const [selectedIdea, setSelectedIdea] = useState('');
 
   const contentSizeOptions = [
     { label: 'Micro', value: 50 },
@@ -33,7 +35,7 @@ export const EventSidebar = ({ event, onClose }) => {
     { label: 'Long-form', value: 8000 }
   ];
 
-  const { state, dispatch } = useContext(AppContext); // Get state and dispatch from context
+  const { state, dispatch } = useContext(AppContext);
 
   useEffect(() => {
     const storedApiKey = localStorage.getItem('chatgptApiKey');
@@ -44,10 +46,8 @@ export const EventSidebar = ({ event, onClose }) => {
 
   useEffect(() => {
     if (event) {
-      setIsApproved(event.isApproved || false); // Update approval state when event changes
-      console.log('Event prop changed:', event); // Log the event object
-
-      // Fetch live data for the partner
+      setIsApproved(event.isApproved || false);
+      console.log('Event prop changed:', event);
       fetchLiveData(event.partner.name).then(data => setLiveData(data));
     }
   }, [event]);
@@ -62,7 +62,7 @@ export const EventSidebar = ({ event, onClose }) => {
     setIsTemplateManagerOpen(false);
   };
 
-  const handleGenerateContent = async () => {
+  const handleGenerateContent = async (idea) => {
     setIsLoading(true);
     console.log('Generating content for event:', event);
   
@@ -88,10 +88,11 @@ export const EventSidebar = ({ event, onClose }) => {
 
   User Provided Context: ${actualAdditionalContext}
   
+  Content Idea: ${idea}
+  
   Please generate content that fits this template and these event details. 
   The content should be engaging, relevant, and tailored to the specific partner and content type.`;
 
-      // Use contentSize directly for max_tokens
       const maxTokens = contentSize;
   
       const response = await client.chat.completions.create({
@@ -112,7 +113,6 @@ export const EventSidebar = ({ event, onClose }) => {
       return true;
     } catch (error) {
       console.error('Error generating content:', error);
-      // Optionally, you can dispatch an action to update the UI with the error message
       dispatch({ type: 'SET_ERROR', payload: error.message });
       return false;
     } finally {
@@ -134,7 +134,72 @@ export const EventSidebar = ({ event, onClose }) => {
     setIsApproved(true);
   };
 
-  // Find the updated event from the state
+  const handleGenerateIdeas = async () => {
+    setIsLoading(true);
+    console.log('Generating content ideas for event:', event);
+  
+    try {
+      const client = new OpenAI({
+        apiKey: apiKey,
+        dangerouslyAllowBrowser: true,
+      });
+  
+      const systemPrompt = `You are an AI assistant specialized in generating content ideas for events. 
+      Your task is to create engaging and relevant content ideas based on the provided template and event details. 
+      Ensure the ideas are appropriate for the partner, content type, and occasion. Only provide a title for each idea.
+      Provide the ideas as a JSON array of strings.`;
+  
+      const userPrompt = `Template: ${selectedTemplate.content}
+  
+  Event Details:
+  Partner: ${event.partner.name}
+  Content Type: ${event.contentType}
+  Time Slot: ${event.timeSlot}
+  Date: ${new Date(event.date).toDateString()}
+  
+  Recent Partner (Tweets): ${additionalContext}
+  
+  User Provided Context: ${actualAdditionalContext}
+  
+  Please generate content ideas that fit this template and these event details. 
+  The ideas should be engaging, relevant, and tailored to the specific partner and content type. 
+  Return the ideas as a JSON array of strings.`;
+  
+      const response = await client.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 300,
+        response_format: { type: "json_object" }
+      });
+  
+      const responseContent = response.choices[0].message.content;
+      const parsedResponse = JSON.parse(responseContent);
+      const ideas = parsedResponse.ideas;
+      if (!Array.isArray(ideas)) {
+        throw new Error('Invalid response format');
+      }
+      console.log('Generated content ideas:', ideas);
+  
+      setContentIdeas(ideas);
+    } catch (error) {
+      console.error('Error generating or parsing content ideas:', error);
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to generate content ideas. Please try again.' });
+      setContentIdeas([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSelectIdea = (idea) => {
+    setSelectedIdea(idea);
+    setActualAdditionalContext(idea);
+    handleGenerateContent(idea);
+  };
+
   const updatedEvent = state.schedule.find(e => e.id === event.id);
 
   return (
@@ -178,7 +243,7 @@ export const EventSidebar = ({ event, onClose }) => {
             className="mb-2 p-2 border rounded w-full"
           >
             {contentSizeOptions.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
+              <option key={option.label} value={option.value}>{option.label}</option>
             ))}
           </select>
           <input
@@ -207,16 +272,33 @@ export const EventSidebar = ({ event, onClose }) => {
             className="mb-2 p-2 border rounded w-full"
           />
           <Button 
-            onClick={handleGenerateContent} 
-            className="mb-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
-            disabled={isLoading} // Disable button while loading
+            onClick={handleGenerateIdeas} 
+            className="mb-2 bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded w-full"
+            disabled={isLoading}
           >
-            {isLoading ? 'Generating...' : 'Generate Content'}
+            {isLoading ? 'Generating Ideas...' : 'Generate Content Ideas'}
           </Button>
+          {contentIdeas.length > 0 && (
+            <div className="mt-4 p-2 border rounded bg-gray-100">
+              <h3 className="text-lg font-bold">Content Ideas</h3>
+              <ul>
+                {contentIdeas.map((idea, index) => (
+                  <li key={index} className="mb-2">
+                    <Button 
+                      onClick={() => handleSelectIdea(idea)} 
+                      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+                    >
+                      {idea}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <Button 
             onClick={handleApproveContent} 
             className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
-            disabled={isApproved} // Disable button if already approved
+            disabled={isApproved}
           >
             {isApproved ? 'Approved' : 'Approve Content'}
           </Button>
@@ -226,7 +308,7 @@ export const EventSidebar = ({ event, onClose }) => {
           {updatedEvent && updatedEvent.generatedContent && (
             <div className="mt-4 p-2 border rounded bg-gray-100">
               <h3 className="text-lg font-bold">Generated Content</h3>
-              <ReactMarkdown>{updatedEvent.generatedContent}</ReactMarkdown> {/* Render markdown content */}
+              <ReactMarkdown>{updatedEvent.generatedContent}</ReactMarkdown>
             </div>
           )}
           <TwitterTimeline twitterHandle={event.partner.twitter} />
