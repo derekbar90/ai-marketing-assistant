@@ -12,7 +12,7 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
   const [apiKey, setApiKey] = useState(localStorage.getItem('chatgptApiKey') || '');
   const [isLoading, setIsLoading] = useState(false); // Add loading state
 
-  const { dispatch } = useContext(AppContext); // Get dispatch from context
+  const { state, dispatch } = useContext(AppContext); // Get state and dispatch from context
 
   useEffect(() => {
     const storedApiKey = localStorage.getItem('chatgptApiKey');
@@ -20,6 +20,11 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
       setApiKey(storedApiKey);
     }
   }, []);
+
+  useEffect(() => {
+    // Re-render when event prop changes
+    console.log('Event prop changed:', event); // Log the event object
+  }, [event]);
 
   if (!event) return null;
 
@@ -33,6 +38,7 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
 
   const handleGenerateContent = async () => {
     setIsLoading(true); // Set loading state to true
+    console.log('Generating content for event:', event); // Log the event object
     const isValid = await onGenerateContent(selectedTemplate, apiKey, event);
     if (isValid) {
       const client = new OpenAI({
@@ -42,11 +48,12 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
 
       try {
         const response = await client.chat.completions.create({
-          model: 'gpt-4',
+          model: 'gpt-4o-mini',
           messages: [{ role: 'user', content: `${selectedTemplate}\n\nEvent Details:\nPartner: ${event.partner.name}\nContent Type: ${event.contentType}\nTime Slot: ${event.timeSlot}\nDate: ${new Date(event.date).toDateString()}` }],
         });
 
         const content = response.choices[0].message.content;
+        console.log('Generated content:', content); // Log the generated content
 
         // Dispatch action to update the event content in the state
         dispatch({ type: 'UPDATE_EVENT_CONTENT', payload: { id: event.id, content } });
@@ -62,6 +69,9 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
       setIsLoading(false); // Set loading state to false
     }
   };
+
+  // Find the updated event from the state
+  const updatedEvent = state.schedule.find(e => e.id === event.id);
 
   return (
     <div className="fixed top-0 right-0 w-1/3 h-full bg-white shadow-lg z-50">
@@ -95,10 +105,10 @@ export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
           <Button onClick={handleOpenTemplateManager} className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full">
             Manage Templates
           </Button>
-          {event.generatedContent && (
+          {updatedEvent && updatedEvent.generatedContent && (
             <div className="mt-4 p-2 border rounded bg-gray-100">
               <h3 className="text-lg font-bold">Generated Content</h3>
-              <p>{event.generatedContent}</p>
+              <p>{updatedEvent.generatedContent}</p>
             </div>
           )}
         </CardContent>
