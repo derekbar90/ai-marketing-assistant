@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import OpenAI from 'openai';
+import ReactMarkdown from 'react-markdown'; // Import ReactMarkdown
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { TemplateManager } from './TemplateManager';
@@ -69,7 +70,7 @@ export const EventSidebar = ({ event, onClose }) => {
   The content should be engaging, relevant, and tailored to the specific partner and content type.`;
   
       const response = await client.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -93,6 +94,7 @@ export const EventSidebar = ({ event, onClose }) => {
       setIsLoading(false);
     }
   };
+
   const handleApiKeyChange = (e) => {
     setApiKey(e.target.value);
   };
@@ -165,7 +167,7 @@ export const EventSidebar = ({ event, onClose }) => {
           {updatedEvent && updatedEvent.generatedContent && (
             <div className="mt-4 p-2 border rounded bg-gray-100">
               <h3 className="text-lg font-bold">Generated Content</h3>
-              <p>{updatedEvent.generatedContent}</p>
+              <ReactMarkdown>{updatedEvent.generatedContent}</ReactMarkdown> {/* Render markdown content */}
             </div>
           )}
           {liveData.length > 0 && (
