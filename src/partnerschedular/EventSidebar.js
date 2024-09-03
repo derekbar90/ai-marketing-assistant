@@ -6,7 +6,7 @@ import { TemplateManager } from './TemplateManager';
 import { AppContext } from './index'; // Import AppContext
 import { fetchLiveData } from '../utils/twitterClient'; // Import fetchLiveData
 
-export const EventSidebar = ({ event, onClose, onGenerateContent }) => {
+export const EventSidebar = ({ event, onClose }) => {
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [apiKey, setApiKey] = useState(localStorage.getItem('chatgptApiKey') || '');

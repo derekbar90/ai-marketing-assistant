@@ -49,40 +49,6 @@ export const PartnerSchedulingApp = () => {
     setShowBulkAdd(false);
   };
 
-  const handleGenerateContent = async (template, apiKey, event) => {
-    // if (!template || !apiKey) {
-    //   console.error('Template and API key are required');
-    //   return false;
-    // }
-
-    // console.log('Generating content for event:', event); // Log the event object
-
-    // const client = new OpenAI({
-    //   apiKey: apiKey,
-    //   dangerouslyAllowBrowser: true, // Enable this option to allow running in a browser environment
-    // });
-
-    // try {
-    //   const response = await client.chat.completions.create({
-    //     model: 'gpt-4o-mini',
-    //     messages: [{ role: 'user', content: `${template}\n\nEvent Details:\nPartner: ${event.partner.name}\nContent Type: ${event.contentType}\nTime Slot: ${event.timeSlot}\nDate: ${new Date(event.date).toDateString()}` }],
-    //   });
-
-    //   const content = response.choices[0].message.content;
-    //   console.log('Generated content:', content); // Log the generated content
-
-    //   // Dispatch action to update the event content in the state
-    //   dispatch({ type: 'UPDATE_EVENT_CONTENT', payload: { id: event.id, content } });
-
-    //   console.log('State after dispatch:', state); // Log the state after dispatch
-
-    //   return true;
-    // } catch (error) {
-    //   console.error('Error generating content:', error);
-    //   return false;
-    // }
-  };
-
   return (
     <AppContext.Provider value={{ state, dispatch }}>
       <div className="p-4 mx-14 mx-auto">
@@ -111,7 +77,7 @@ export const PartnerSchedulingApp = () => {
           </div>
         </div>
 
-        <EventSidebar event={selectedEvent} onClose={handleCloseSidebar} onGenerateContent={handleGenerateContent} />
+        <EventSidebar event={selectedEvent} onClose={handleCloseSidebar} />
         {showBulkAdd && <BulkAddPartners onClose={handleCloseBulkAdd} />}
       </div>
     </AppContext.Provider>
