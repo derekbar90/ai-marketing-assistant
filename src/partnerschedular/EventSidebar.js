@@ -145,7 +145,7 @@ export const EventSidebar = ({ event, onClose }) => {
       });
   
       const systemPrompt = `You are an AI assistant specialized in generating content titles for posts. Review the tweets and additional context and provide a title for each idea.
-      Ensure the ideas are appropriate for the partner, content type, and occasion. Only provide a title for each idea. Do not repeat ideas and concepts.
+      Ensure the ideas are appropriate for the partner, content type, and occasion. Only provide a title for each idea. Do not repeat ideas and concepts. Provide as many ideas as possible. Categorize them by using [emoji - category] at the beginning of each title.
       Provide the ideas as a JSON array of strings. { titles: ["title1", "title2", "title3", ...] }`;
   
       const userPrompt = `Template: ${selectedTemplate.content}
@@ -165,7 +165,7 @@ export const EventSidebar = ({ event, onClose }) => {
           { role: 'user', content: userPrompt }
         ],
         temperature: 0.7,
-        max_tokens: 300,
+        max_tokens: 500,
         response_format: { type: "json_object" }
       });
   
