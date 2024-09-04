@@ -14,8 +14,15 @@ import { generateUniqueId } from '../utils/eventUtils'; // Import generateUnique
 
 export const AppContext = createContext();
 
+import { PGlite } from "@electric-sql/pglite"
+import { live } from "@electric-sql/pglite/live"
+import { PGliteProvider } from "@electric-sql/pglite-react"
+
+const db = await PGlite.create({
+  extensions: { live }
+})
+
 export const PartnerSchedulingApp = () => {
-  const db = usePGlite();
   const [state, dispatch] = useReducer(appReducer, loadStateFromLocalStorage());
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showBulkAdd, setShowBulkAdd] = useState(false);
@@ -51,7 +58,8 @@ export const PartnerSchedulingApp = () => {
   };
 
   return (
-    <AppContext.Provider value={{ state, dispatch, db }}>
+    <PGliteProvider db={db}>
+    <AppContext.Provider value={{ state, dispatch }}>
       <div className="p-4 mx-14 mx-auto">
         <h1 className="text-2xl font-bold mb-4">Partner Content Scheduling App</h1>
 
@@ -82,5 +90,6 @@ export const PartnerSchedulingApp = () => {
         {showBulkAdd && <BulkAddPartners onClose={handleCloseBulkAdd} />}
       </div>
     </AppContext.Provider>
+    </PGliteProvider>
   );
 };
