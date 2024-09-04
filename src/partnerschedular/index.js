@@ -16,11 +16,12 @@ export const AppContext = createContext();
 
 import { PGlite } from "@electric-sql/pglite"
 import { live } from "@electric-sql/pglite/live"
+import { vector } from "@electric-sql/pglite/vector"
 import { PGliteProvider } from "@electric-sql/pglite-react"
 import { ToastProvider } from '../components/ui/toast';
 
 const db = await PGlite.create({
-  extensions: { live,  },
+  extensions: { live, vector },
   dataDir: 'idb://my-pgdata'
 })
 
