@@ -276,7 +276,7 @@ export const PartnerSidebar = ({
   };
 
   return (
-    <div className={`fixed top-0 right-0 h-full w-96 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto`}>
+    <div className={`fixed top-0 right-0 h-full w-1/4 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto`}>
       <Button 
         className="absolute top-4 -left-10" 
         onClick={() => setIsOpen(!isOpen)}
@@ -390,15 +390,6 @@ export const PartnerSidebar = ({
                     <span className="truncate max-w-[150px]">{file.filename}</span>
                   </div>
                   <div>
-                    <Button 
-                      onClick={() => handleGenerateEmbedding(file.id, file.filename)} 
-                      variant="outline" 
-                      size="sm" 
-                      className="mr-1"
-                      disabled={embeddingStatus[file.id] === 'loading'}
-                    >
-                      {embeddingStatus[file.id] === 'loading' ? 'Generating...' : 'Generate Embedding'}
-                    </Button>
                     <Button onClick={() => handleFileView(file.id)} variant="ghost" size="sm" className="mr-1">
                       <Eye size={16} />
                     </Button>
