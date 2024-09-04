@@ -7,6 +7,7 @@ import { Trash2, ChevronRight, ChevronLeft, Upload, File, Eye, Download } from '
 import { usePGlite } from '@electric-sql/pglite-react';
 import { useDropzone } from 'react-dropzone';
 import { Toast } from '../components/ui/toast';
+import { useOpenAIEmbeddings } from '../hooks/useOpenAIEmbeddings';
 
 export const PartnerSidebar = ({ 
   isOpen, 
@@ -23,6 +24,9 @@ export const PartnerSidebar = ({
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [apiKey, setApiKey] = useState(localStorage.getItem('chatgptApiKey') || '');
+  const { getEmbedding, loading: embeddingLoading, error: embeddingError } = useOpenAIEmbeddings(apiKey);
+  const [embeddingStatus, setEmbeddingStatus] = useState({});
 
   useEffect(() => {
     if (db) {
@@ -43,7 +47,8 @@ export const PartnerSidebar = ({
           id SERIAL PRIMARY KEY,
           partner_id TEXT,
           filename TEXT,
-          content TEXT
+          content TEXT,
+          embedding JSONB
         );
       `);
       console.log('partner_files table created or already exists');
@@ -76,17 +81,27 @@ export const PartnerSidebar = ({
   };
 
   const handleUploadFiles = async () => {
+    if (!apiKey) {
+      setToast({ show: true, message: 'Please enter an OpenAI API key', type: 'error' });
+      return;
+    }
+
     setIsUploading(true);
     for (const file of uploadedFiles) {
       if (file.content) {
         try {
-          await db.query(`
-            INSERT INTO partner_files (partner_id, filename, content)
-            VALUES ($1, $2, $3);
-          `, [selectedPartner.id, file.name, file.content]);
+          const embedding = await getEmbedding(file.content);
+          if (embedding) {
+            await db.query(`
+              INSERT INTO partner_files (partner_id, filename, content, embedding)
+              VALUES ($1, $2, $3, $4);
+            `, [selectedPartner.id, file.name, file.content, JSON.stringify(embedding)]);
+          } else {
+            throw new Error('Failed to get embedding');
+          }
         } catch (error) {
           console.error('Error inserting file:', error);
-          setToast({ show: true, message: `Error uploading ${file.name}`, type: 'error' });
+          setToast({ show: true, message: `Error uploading ${file.name}: ${error.message}`, type: 'error' });
         }
       }
     }
@@ -163,6 +178,38 @@ export const PartnerSidebar = ({
     }
   };
 
+  const handleApiKeyChange = (e) => {
+    const newApiKey = e.target.value;
+    setApiKey(newApiKey);
+    localStorage.setItem('chatgptApiKey', newApiKey);
+  };
+
+  const handleGenerateEmbedding = async (fileId, filename) => {
+    setEmbeddingStatus(prev => ({ ...prev, [fileId]: 'loading' }));
+    try {
+      const result = await db.query(`SELECT content FROM partner_files WHERE id = $1;`, [fileId]);
+      if (result.rows.length > 0) {
+        const content = result.rows[0].content;
+        const embedding = await getEmbedding(content);
+        if (embedding) {
+          await db.query(`
+            UPDATE partner_files 
+            SET embedding = $1 
+            WHERE id = $2;
+          `, [JSON.stringify(embedding), fileId]);
+          setEmbeddingStatus(prev => ({ ...prev, [fileId]: 'success' }));
+          setToast({ show: true, message: `Embedding generated for ${filename}`, type: 'success' });
+        } else {
+          throw new Error('Failed to generate embedding');
+        }
+      }
+    } catch (error) {
+      console.error('Error generating embedding:', error);
+      setEmbeddingStatus(prev => ({ ...prev, [fileId]: 'error' }));
+      setToast({ show: true, message: `Error generating embedding for ${filename}`, type: 'error' });
+    }
+  };
+
   return (
     <div className={`fixed top-0 right-0 h-full w-96 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto`}>
       <Button 
@@ -218,6 +265,18 @@ export const PartnerSidebar = ({
             </div>
           </div>
           
+          {/* OpenAI API Key Input */}
+          <div className="bg-gray-100 p-4 rounded-lg mb-4">
+            <h3 className="font-bold mb-2">OpenAI API Key</h3>
+            <Input 
+              type="password"
+              value={apiKey}
+              onChange={handleApiKeyChange}
+              placeholder="Enter your OpenAI API key"
+              className="mb-2"
+            />
+          </div>
+          
           {/* File Upload Section */}
           <div className="bg-gray-100 p-4 rounded-lg mb-4">
             <h3 className="font-bold mb-2">Upload Files</h3>
@@ -266,6 +325,15 @@ export const PartnerSidebar = ({
                     <span className="truncate max-w-[150px]">{file.filename}</span>
                   </div>
                   <div>
+                    <Button 
+                      onClick={() => handleGenerateEmbedding(file.id, file.filename)} 
+                      variant="outline" 
+                      size="sm" 
+                      className="mr-1"
+                      disabled={embeddingStatus[file.id] === 'loading'}
+                    >
+                      {embeddingStatus[file.id] === 'loading' ? 'Generating...' : 'Generate Embedding'}
+                    </Button>
                     <Button onClick={() => handleFileView(file.id)} variant="ghost" size="sm" className="mr-1">
                       <Eye size={16} />
                     </Button>
@@ -299,6 +367,13 @@ export const PartnerSidebar = ({
           message={toast.message}
           type={toast.type}
           onClose={() => setToast({ ...toast, show: false })}
+        />
+      )}
+      {embeddingError && (
+        <Toast
+          message={`Error getting embeddings: ${embeddingError}`}
+          type="error"
+          onClose={() => setEmbeddingError(null)}
         />
       )}
     </div>
