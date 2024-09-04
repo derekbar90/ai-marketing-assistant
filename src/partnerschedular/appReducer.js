@@ -128,8 +128,16 @@ export const loadStateFromLocalStorage = () => {
 export const appReducer = (state, action) => {
   switch (action.type) {
     case 'ADD_PARTNER':
+      // Prevent adding duplicate "Self" partner
+      if (action.payload.id === 'self' && state.partners.some(p => p.id === 'self')) {
+        return state;
+      }
       return { ...state, partners: [...state.partners, action.payload] };
     case 'REMOVE_PARTNER':
+      // Prevent removing the "Self" partner
+      if (action.payload === 'self') {
+        return state;
+      }
       return { ...state, partners: state.partners.filter(partner => partner.id !== action.payload) };
     case 'SET_SCHEDULE':
       return { ...state, schedule: action.payload };

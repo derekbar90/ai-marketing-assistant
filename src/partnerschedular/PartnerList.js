@@ -8,6 +8,7 @@ import { SketchPicker } from 'react-color';
 import { Slider } from '../components/ui/slider';
 import { PartnerSidebar } from './PartnerSidebar';
 import { v4 as uuid } from 'uuid';
+import { User } from 'lucide-react';
 
 // Function to generate a random color
 const getRandomColor = () => {
@@ -33,6 +34,20 @@ export const PartnerList = () => {
     console.log('saving');
     localStorage.setItem('appState', JSON.stringify(state));
   }, [state]);
+
+  useEffect(() => {
+    // Check if the "Self" partner exists, if not, add it
+    if (!state.partners.some(partner => partner.id === 'self')) {
+      const selfPartner = {
+        id: 'self',
+        name: 'Self',
+        color: '#000000', // You can choose any default color
+        weight: 1,
+        twitter: '' // You can set your own Twitter handle here
+      };
+      dispatch({ type: 'ADD_PARTNER', payload: selfPartner });
+    }
+  }, []);
 
   const handleAddPartner = () => {
     const newPartner = { 
@@ -112,10 +127,14 @@ export const PartnerList = () => {
             {Array.isArray(state.partners) && state.partners.map(partner => (
               <li key={partner.id} className="flex justify-between items-center mb-2">
                 <div className="flex items-center mr-4 border-2 border-gray-300 rounded-md p-2">
-                  <div 
-                    className="w-4 h-4 rounded-full border mr-2" 
-                    style={{ backgroundColor: partner.color }} 
-                  />
+                  {partner.id === 'self' ? (
+                    <User className="w-4 h-4 mr-2" />
+                  ) : (
+                    <div 
+                      className="w-4 h-4 rounded-full border mr-2" 
+                      style={{ backgroundColor: partner.color }} 
+                    />
+                  )}
                   <span className="text-lg">{partner.name}</span>
                   {partner.twitter && (
                     <a 
