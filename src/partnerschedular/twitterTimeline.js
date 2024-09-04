@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-export const TwitterTimeline = ({twitterHandle}) => {
+export const TwitterTimeline = ({ twitterHandle }) => {
     const timelineRef = useRef(null);
   
     useEffect(() => {
@@ -11,6 +11,17 @@ export const TwitterTimeline = ({twitterHandle}) => {
   
       script.onload = () => {
         if (window.twttr && timelineRef.current) {
+          // Clear the existing content
+          timelineRef.current.innerHTML = '';
+          // Create a new anchor element
+          const anchor = document.createElement('a');
+          anchor.className = 'twitter-timeline';
+          anchor.setAttribute('data-dnt', 'true');
+          anchor.href = `https://twitter.com/${twitterHandle}?ref_src=twsrc%5Etfw`;
+          anchor.textContent = `Tweets by ${twitterHandle}`;
+          // Append the new anchor to the container
+          timelineRef.current.appendChild(anchor);
+          // Load the new timeline
           window.twttr.widgets.load(timelineRef.current);
         }
       };
@@ -18,17 +29,9 @@ export const TwitterTimeline = ({twitterHandle}) => {
       return () => {
         document.body.removeChild(script);
       };
-    }, []);
+    }, [twitterHandle]); // Add twitterHandle to the dependency array
   
     return (
-      <div ref={timelineRef} style={{ overflowY: 'scroll', height: '500px' }}>
-        <a 
-          className="twitter-timeline" 
-          data-dnt="true" 
-          href={`https://twitter.com/${twitterHandle}?ref_src=twsrc%5Etfw`}
-        >
-          Tweets by {twitterHandle}
-        </a>
-      </div>
+      <div ref={timelineRef} style={{ overflowY: 'scroll', height: '500px' }}></div>
     );
   };
