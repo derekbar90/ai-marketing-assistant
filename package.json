@@ -36,7 +36,8 @@
     "recharts": "^2.12.7",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.7",
-    "util": "^0.12.5"
+    "util": "^0.12.5",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@babel/runtime": "7.13.8",

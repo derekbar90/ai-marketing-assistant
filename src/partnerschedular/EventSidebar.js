@@ -162,9 +162,9 @@ export const EventSidebar = ({ event, onClose }) => {
           <Button 
             onClick={handleApproveContent} 
             className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
-            disabled={isApproved || !event.generatedContent}
+            disabled={!isApproved && !currentEvent.generatedContent}
           >
-            {isApproved ? 'Approved' : 'Approve Content'}
+            {(!isApproved && !currentEvent.generatedContent) ? 'Approved' : 'Approve Content'}
           </Button>
           
           <Button onClick={handleOpenTemplateManager} className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full">

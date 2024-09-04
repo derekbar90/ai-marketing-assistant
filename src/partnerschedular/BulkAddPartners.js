@@ -3,7 +3,7 @@ import { AppContext } from './index';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Textarea } from '../components/ui/textarea';
-
+import { v4 as uuid } from 'uuid';
 export const BulkAddPartners = ({ onClose }) => {
   const { dispatch } = useContext(AppContext);
   const [bulkInput, setBulkInput] = useState('');
@@ -14,7 +14,7 @@ export const BulkAddPartners = ({ onClose }) => {
       const [name, color, weight, twitter] = line.split(',').map(item => item.trim());
       if (name && color && weight) {
         const newPartner = { 
-          id: Date.now() + Math.random(), 
+          id: uuid(), 
           name, 
           color, 
           weight: parseInt(weight, 10),

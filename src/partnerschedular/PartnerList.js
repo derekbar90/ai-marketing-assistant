@@ -7,6 +7,7 @@ import { Plus, ChevronRight, ChevronLeft } from 'lucide-react';
 import { SketchPicker } from 'react-color';
 import { Slider } from '../components/ui/slider';
 import { PartnerSidebar } from './PartnerSidebar';
+import { v4 as uuid } from 'uuid';
 
 // Function to generate a random color
 const getRandomColor = () => {
@@ -35,7 +36,7 @@ export const PartnerList = () => {
 
   const handleAddPartner = () => {
     const newPartner = { 
-      id: Date.now(), 
+      id: uuid(), 
       name: partnerName, 
       color: partnerColor, 
       weight: partnerWeight,
