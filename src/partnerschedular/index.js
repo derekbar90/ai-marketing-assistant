@@ -1,5 +1,5 @@
 import React, { useReducer, createContext, useState, useEffect } from 'react';
-import OpenAI from 'openai';
+import { usePGlite } from "@electric-sql/pglite-react";
 import { PartnerList } from './PartnerList';
 import { ScheduleGenerator } from './ScheduleGenerator';
 import { CalendarView } from './CalendarView';
@@ -15,6 +15,7 @@ import { generateUniqueId } from '../utils/eventUtils'; // Import generateUnique
 export const AppContext = createContext();
 
 export const PartnerSchedulingApp = () => {
+  const db = usePGlite();
   const [state, dispatch] = useReducer(appReducer, loadStateFromLocalStorage());
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showBulkAdd, setShowBulkAdd] = useState(false);
@@ -50,7 +51,7 @@ export const PartnerSchedulingApp = () => {
   };
 
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={{ state, dispatch, db }}>
       <div className="p-4 mx-14 mx-auto">
         <h1 className="text-2xl font-bold mb-4">Partner Content Scheduling App</h1>
 
