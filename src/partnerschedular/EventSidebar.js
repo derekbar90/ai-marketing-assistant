@@ -10,6 +10,8 @@ import { ContentGenerator } from './ContentGenerator';
 import { ContentIdeas } from './ContentIdeas';
 import { TwitterTimeline } from './TwitterTimeline';
 import { EventDetails } from './EventDetails';
+import { useContentGenerator } from './hooks/useContentGenerator';
+import ReactMarkdown from 'react-markdown';
 
 export const EventSidebar = ({ event, onClose }) => {
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
@@ -20,6 +22,7 @@ export const EventSidebar = ({ event, onClose }) => {
 
   const { state, dispatch } = useContext(AppContext);
   const { isApproved, setIsApproved } = useEventData(event);
+  const { generateContent, isLoading } = useContentGenerator();
 
   const handleOpenTemplateManager = () => setIsTemplateManagerOpen(true);
   const handleCloseTemplateManager = () => setIsTemplateManagerOpen(false);
@@ -45,6 +48,47 @@ export const EventSidebar = ({ event, onClose }) => {
 
   if (!event) return null;
 
+  useEffect(() => {
+    console.log('Event in EventSidebar:', event);
+  }, [event]);
+
+  const handleSelectIdea = async (idea) => {
+    try {
+      const content = await generateContent(event, selectedTemplate, contentSize, additionalContext, actualAdditionalContext, idea.title);
+      dispatch({ 
+        type: 'UPDATE_EVENT_CONTENT', 
+        payload: { 
+          id: event.id, 
+          content, 
+          isApproved: false,
+          selectedIdea: idea
+        } 
+      });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to generate content. Please try again.' });
+    }
+  };
+
+  const handleGenerateContent = async () => {
+    try {
+      const content = await generateContent(event, selectedTemplate, contentSize, additionalContext, actualAdditionalContext);
+      dispatch({ 
+        type: 'UPDATE_EVENT_CONTENT', 
+        payload: { 
+          id: event.id, 
+          content, 
+          isApproved: false
+        } 
+      });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to generate content. Please try again.' });
+    }
+  };
+
+  
+  // Find the most up-to-date event data from the state
+  const currentEvent = state.schedule.find(e => e.id === event.id) || event;
+
   return (
     <div className="fixed top-0 left-0 w-1/3 h-full bg-white shadow-lg z-50">
       <Card className="h-full overflow-auto">
@@ -56,7 +100,7 @@ export const EventSidebar = ({ event, onClose }) => {
           <EventDetails event={event} />
           
           <select
-            value={selectedTemplate}
+            value={selectedTemplate?.title || ''}
             onChange={(e) => setSelectedTemplate(state.templates.find(template => template.title === e.target.value))}
             className="mb-2 p-2 border rounded w-full"
           >
@@ -91,25 +135,34 @@ export const EventSidebar = ({ event, onClose }) => {
             className="mb-2 p-2 border rounded w-full"
           />
 
-          <ContentGenerator
-            event={event}
-            selectedTemplate={selectedTemplate}
-            contentSize={contentSize}
-            additionalContext={additionalContext}
-            actualAdditionalContext={actualAdditionalContext}
-          />
+          <Button 
+            onClick={handleGenerateContent} 
+            className="mb-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Generating Content...' : 'Generate Content'}
+          </Button>
+
+          {currentEvent.generatedContent && (
+            <div className="mt-4 p-2 border rounded bg-gray-100">
+              <h3 className="text-lg font-bold">Generated Content</h3>
+              {currentEvent.selectedIdea && <p><strong>Selected Idea:</strong> {currentEvent.selectedIdea.title}</p>}
+              <ReactMarkdown>{currentEvent.generatedContent}</ReactMarkdown>
+            </div>
+          )}
 
           <ContentIdeas
             event={event}
             selectedTemplate={selectedTemplate}
             additionalContext={additionalContext}
             actualAdditionalContext={actualAdditionalContext}
+            onSelectIdea={handleSelectIdea}
           />
 
           <Button 
             onClick={handleApproveContent} 
             className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
-            disabled={isApproved}
+            disabled={isApproved || !event.generatedContent}
           >
             {isApproved ? 'Approved' : 'Approve Content'}
           </Button>

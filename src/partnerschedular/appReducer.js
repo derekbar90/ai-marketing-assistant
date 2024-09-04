@@ -145,12 +145,26 @@ export const appReducer = (state, action) => {
         ) 
       };
     case 'UPDATE_EVENT_CONTENT':
-      return {
+      console.log('Updating event content. Payload:', action.payload);
+      console.log('Current state:', state);
+      const updatedSchedule = state.schedule.map(event =>
+        event.id === action.payload.id
+          ? {
+              ...event,
+              generatedContent: action.payload.content,
+              isApproved: action.payload.isApproved,
+              selectedIdea: action.payload.selectedIdea
+            }
+          : event
+      );
+      console.log('Updated schedule:', updatedSchedule);
+      const newState = {
         ...state,
-        schedule: state.schedule.map(event =>
-          event.id === action.payload.id ? { ...event, generatedContent: action.payload.content, isApproved: action.payload.isApproved } : event
-        ),
+        schedule: updatedSchedule,
       };
+      console.log('New state after update:', newState);
+      return newState;
+
     case 'APPROVE_EVENT_CONTENT':
       return {
         ...state,

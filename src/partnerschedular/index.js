@@ -1,4 +1,4 @@
-import React, { useReducer, createContext, useState } from 'react';
+import React, { useReducer, createContext, useState, useEffect } from 'react';
 import OpenAI from 'openai';
 import { PartnerList } from './PartnerList';
 import { ScheduleGenerator } from './ScheduleGenerator';
