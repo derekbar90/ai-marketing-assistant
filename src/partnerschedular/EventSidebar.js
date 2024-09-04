@@ -24,6 +24,10 @@ export const EventSidebar = ({ event, onClose }) => {
   const { isApproved, setIsApproved } = useEventData(event);
   const { generateContent, isLoading } = useContentGenerator();
 
+  // useEffect(() => {
+  //   console.log('Event in EventSidebar:', event);
+  // }, [event]);
+
   const handleOpenTemplateManager = () => setIsTemplateManagerOpen(true);
   const handleCloseTemplateManager = () => setIsTemplateManagerOpen(false);
 
@@ -47,10 +51,6 @@ export const EventSidebar = ({ event, onClose }) => {
   ];
 
   if (!event) return null;
-
-  useEffect(() => {
-    console.log('Event in EventSidebar:', event);
-  }, [event]);
 
   const handleSelectIdea = async (idea) => {
     try {

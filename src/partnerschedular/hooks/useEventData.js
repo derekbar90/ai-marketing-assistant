@@ -7,8 +7,8 @@ export const useEventData = (event) => {
 
   useEffect(() => {
     if (event) {
+      // Initialize isApproved based on event data
       setIsApproved(event.isApproved || false);
-      console.log('Event prop changed:', event);
     }
   }, [event]);
 
