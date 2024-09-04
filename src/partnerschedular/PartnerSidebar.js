@@ -9,6 +9,7 @@ import { useDropzone } from 'react-dropzone';
 import { Toast } from '../components/ui/toast';
 import { useOpenAIEmbeddings } from '../hooks/useOpenAIEmbeddings';
 import { usePartnerEmbeddedFiles } from '../hooks/usePartnerEmbeddedFiles';
+import { useOpenAI } from '../hooks/useOpenAI';
 
 export const PartnerSidebar = ({ 
   isOpen, 
@@ -29,7 +30,10 @@ export const PartnerSidebar = ({
   const { getEmbedding, loading: embeddingLoading, error: embeddingError } = useOpenAIEmbeddings(apiKey);
   const [embeddingStatus, setEmbeddingStatus] = useState({});
   const [query, setQuery] = useState('');
-  const { queryEmbeddedFiles, results, loading: queryLoading, error: queryError } = usePartnerEmbeddedFiles(selectedPartner?.id, apiKey);
+  const { queryEmbeddedFiles, results, loading: queryLoading, error: queryError, generatePrompt } = usePartnerEmbeddedFiles(selectedPartner?.id, apiKey);
+  const { getCompletion } = useOpenAI(apiKey);
+  const [answer, setAnswer] = useState('');
+  const [answerLoading, setAnswerLoading] = useState(false);
 
   useEffect(() => {
     if (db) {
@@ -256,7 +260,18 @@ export const PartnerSidebar = ({
   const handleQuerySubmit = async (e) => {
     e.preventDefault();
     if (query.trim()) {
-      await queryEmbeddedFiles(query);
+      setAnswerLoading(true);
+      try {
+        await queryEmbeddedFiles(query);
+        const prompt = generatePrompt(query, results);
+        const completion = await getCompletion(prompt);
+        setAnswer(completion);
+      } catch (error) {
+        console.error('Error getting answer:', error);
+        setToast({ show: true, message: 'Error getting answer', type: 'error' });
+      } finally {
+        setAnswerLoading(false);
+      }
     }
   };
 
@@ -409,14 +424,20 @@ export const PartnerSidebar = ({
                 placeholder="Enter your query"
                 className="mb-2"
               />
-              <Button type="submit" disabled={queryLoading}>
-                {queryLoading ? 'Querying...' : 'Search'}
+              <Button type="submit" disabled={queryLoading || answerLoading}>
+                {queryLoading || answerLoading ? 'Processing...' : 'Search'}
               </Button>
             </form>
             {queryError && <p className="text-red-500 mb-2">{queryError}</p>}
+            {answer && (
+              <div className="mt-4">
+                <h4 className="font-semibold mb-1">Answer:</h4>
+                <p className="text-sm bg-white p-2 rounded-md">{answer}</p>
+              </div>
+            )}
             {results.length > 0 && (
-              <div>
-                <h4 className="font-semibold mb-1">Results:</h4>
+              <div className="mt-4">
+                <h4 className="font-semibold mb-1">Relevant Files:</h4>
                 <ul className="list-disc pl-5">
                   {results.map((result) => (
                     <li key={result.id} className="mb-2">

@@ -35,5 +35,19 @@ export const usePartnerEmbeddedFiles = (partnerId, apiKey) => {
     }
   }, [db, partnerId, getEmbedding]);
 
-  return { queryEmbeddedFiles, results, loading, error };
+  const generatePrompt = useCallback((query, results) => {
+    const context = results.map(result => `File: ${result.filename}\nContent: ${result.content}`).join('\n\n');
+    return `
+      You are an AI assistant tasked with answering questions based on the provided context.
+      Use the following information to answer the user's query:
+
+      ${context}
+
+      User Query: ${query}
+
+      Please provide a concise and relevant answer based on the given context:
+    `;
+  }, []);
+
+  return { queryEmbeddedFiles, results, loading, error, generatePrompt };
 };
