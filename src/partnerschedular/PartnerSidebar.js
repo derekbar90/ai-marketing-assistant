@@ -54,7 +54,7 @@ export const PartnerSidebar = ({
           partner_id TEXT,
           filename TEXT,
           content TEXT,
-          embedding vector(384)
+          embedding vector
         );
       `);
 
@@ -128,10 +128,12 @@ export const PartnerSidebar = ({
         try {
           const embedding = await getEmbedding(file.content);
           if (embedding) {
+            // Convert the embedding array to a PostgreSQL array literal
+            const embeddingString = `[${embedding.join(',')}]`;
             await db.query(`
               INSERT INTO partner_files (partner_id, filename, content, embedding)
-              VALUES ($1, $2, $3, $4);
-            `, [selectedPartner.id, file.name, file.content, embedding]);
+              VALUES ($1, $2, $3, $4::vector);
+            `, [selectedPartner.id, file.name, file.content, embeddingString]);
           } else {
             throw new Error('Failed to get embedding');
           }
@@ -228,11 +230,13 @@ export const PartnerSidebar = ({
         const content = result.rows[0].content;
         const embedding = await getEmbedding(content);
         if (embedding) {
+          // Convert the embedding array to a PostgreSQL array literal
+          const embeddingString = `{${embedding.join(',')}}`;
           await db.query(`
             UPDATE partner_files 
-            SET embedding = $1 
+            SET embedding = $1::vector 
             WHERE id = $2;
-          `, [embedding, fileId]);
+          `, [embeddingString, fileId]);
           setEmbeddingStatus(prev => ({ ...prev, [fileId]: 'success' }));
           setToast({ show: true, message: `Embedding generated for ${filename}`, type: 'success' });
         } else {
