@@ -19,7 +19,8 @@ import { live } from "@electric-sql/pglite/live"
 import { PGliteProvider } from "@electric-sql/pglite-react"
 
 const db = await PGlite.create({
-  extensions: { live }
+  extensions: { live,  },
+  dataDir: 'idb://my-pgdata'
 })
 
 export const PartnerSchedulingApp = () => {
