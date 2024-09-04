@@ -8,6 +8,7 @@ import { usePGlite } from '@electric-sql/pglite-react';
 import { useDropzone } from 'react-dropzone';
 import { Toast } from '../components/ui/toast';
 import { useOpenAIEmbeddings } from '../hooks/useOpenAIEmbeddings';
+import { usePartnerEmbeddedFiles } from '../hooks/usePartnerEmbeddedFiles';
 
 export const PartnerSidebar = ({ 
   isOpen, 
@@ -27,6 +28,8 @@ export const PartnerSidebar = ({
   const [apiKey, setApiKey] = useState(localStorage.getItem('chatgptApiKey') || '');
   const { getEmbedding, loading: embeddingLoading, error: embeddingError } = useOpenAIEmbeddings(apiKey);
   const [embeddingStatus, setEmbeddingStatus] = useState({});
+  const [query, setQuery] = useState('');
+  const { queryEmbeddedFiles, results, loading: queryLoading, error: queryError } = usePartnerEmbeddedFiles(selectedPartner?.id, apiKey);
 
   useEffect(() => {
     if (db) {
@@ -250,6 +253,13 @@ export const PartnerSidebar = ({
     }
   };
 
+  const handleQuerySubmit = async (e) => {
+    e.preventDefault();
+    if (query.trim()) {
+      await queryEmbeddedFiles(query);
+    }
+  };
+
   return (
     <div className={`fixed top-0 right-0 h-full w-96 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto`}>
       <Button 
@@ -386,6 +396,37 @@ export const PartnerSidebar = ({
                   </div>
                 </div>
               ))
+            )}
+          </div>
+          
+          {/* Query Embedded Files Section */}
+          <div className="bg-gray-100 p-4 rounded-lg mb-4">
+            <h3 className="font-bold mb-2">Query Embedded Files</h3>
+            <form onSubmit={handleQuerySubmit} className="mb-2">
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Enter your query"
+                className="mb-2"
+              />
+              <Button type="submit" disabled={queryLoading}>
+                {queryLoading ? 'Querying...' : 'Search'}
+              </Button>
+            </form>
+            {queryError && <p className="text-red-500 mb-2">{queryError}</p>}
+            {results.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-1">Results:</h4>
+                <ul className="list-disc pl-5">
+                  {results.map((result) => (
+                    <li key={result.id} className="mb-2">
+                      <p className="font-medium">{result.filename}</p>
+                      <p className="text-sm text-gray-600">Distance: {result.distance.toFixed(4)}</p>
+                      <p className="text-sm">{result.content.substring(0, 100)}...</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
           
