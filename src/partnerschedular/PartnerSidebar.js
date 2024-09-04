@@ -42,30 +42,66 @@ export const PartnerSidebar = ({
 
   const createPartnerFilesTable = async () => {
     try {
+      console.log('Attempting to create partner_files table...');
+
+      // Create vector extension
+      await db.query(`CREATE EXTENSION IF NOT EXISTS vector;`);
+
+      // Create table
       await db.query(`
         CREATE TABLE IF NOT EXISTS partner_files (
           id SERIAL PRIMARY KEY,
           partner_id TEXT,
           filename TEXT,
           content TEXT,
-          embedding JSONB
+          embedding vector(384)
         );
       `);
+
+      // Create index
+      await db.query(`
+        CREATE INDEX IF NOT EXISTS partner_files_embedding_idx 
+        ON partner_files USING hnsw (embedding vector_ip_ops);
+      `);
+
       console.log('partner_files table created or already exists');
+
+      // Verify table creation
+      const tableCheckResult = await db.query(`
+        SELECT EXISTS (
+          SELECT 1 FROM information_schema.tables WHERE table_name = 'partner_files'
+        );
+      `);
+      const tableExists = tableCheckResult.rows[0].exists;
+
+      if (tableExists) {
+        console.log('partner_files table exists');
+      } else {
+        console.error('Failed to create partner_files table');
+      }
     } catch (error) {
-      console.error('Error creating partner_files table:', error);
+      console.error('Error in createPartnerFilesTable:', error);
     }
   };
 
   const fetchFiles = async () => {
     if (db && selectedPartner) {
       try {
+        console.log('Fetching files for partner:', selectedPartner.id);
         const result = await db.query(`
           SELECT id, filename FROM partner_files WHERE partner_id = $1;
         `, [selectedPartner.id]);
+        console.log('Fetched files:', result.rows);
         setFiles(result.rows);
       } catch (error) {
         console.error('Error fetching files:', error);
+        // Check if the error is due to the table not existing
+        if (error.message.includes('relation "partner_files" does not exist')) {
+          console.log('partner_files table does not exist. Attempting to create it...');
+          await createPartnerFilesTable();
+          // Retry fetching files
+          await fetchFiles();
+        }
       }
     }
   };
@@ -95,7 +131,7 @@ export const PartnerSidebar = ({
             await db.query(`
               INSERT INTO partner_files (partner_id, filename, content, embedding)
               VALUES ($1, $2, $3, $4);
-            `, [selectedPartner.id, file.name, file.content, JSON.stringify(embedding)]);
+            `, [selectedPartner.id, file.name, file.content, embedding]);
           } else {
             throw new Error('Failed to get embedding');
           }
@@ -196,7 +232,7 @@ export const PartnerSidebar = ({
             UPDATE partner_files 
             SET embedding = $1 
             WHERE id = $2;
-          `, [JSON.stringify(embedding), fileId]);
+          `, [embedding, fileId]);
           setEmbeddingStatus(prev => ({ ...prev, [fileId]: 'success' }));
           setToast({ show: true, message: `Embedding generated for ${filename}`, type: 'success' });
         } else {
