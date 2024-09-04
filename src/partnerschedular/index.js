@@ -17,6 +17,7 @@ export const AppContext = createContext();
 import { PGlite } from "@electric-sql/pglite"
 import { live } from "@electric-sql/pglite/live"
 import { PGliteProvider } from "@electric-sql/pglite-react"
+import { ToastProvider } from '../components/ui/toast';
 
 const db = await PGlite.create({
   extensions: { live,  },
@@ -59,6 +60,7 @@ export const PartnerSchedulingApp = () => {
   };
 
   return (
+    <ToastProvider>
     <PGliteProvider db={db}>
     <AppContext.Provider value={{ state, dispatch }}>
       <div className="p-4 mx-14 mx-auto">
@@ -92,5 +94,6 @@ export const PartnerSchedulingApp = () => {
       </div>
     </AppContext.Provider>
     </PGliteProvider>
+    </ToastProvider>
   );
 };
