@@ -29,16 +29,15 @@ export const useContentIdeas = () => {
     return response.choices[0].message.content;
   };
 
-  const createIdeas = async (client, event, contextAnalysis, selfData, additionalContext) => {
+  const createIdeas = async (client, event, selfData, additionalContext) => {
     const systemPrompt = `You are an AI assistant specialized in generating initial content ideas for posts. Use the provided context analysis, template, self partner data, and additional context to generate content ideas. Each idea should include a title, topic, a create brief, template and relevance. Provide as many ideas as possible. Relevance is a number between 0 and 1, indicating how well the idea aligns with the partner's recent content, data, and additional context. Return the ideas as a JSON array of objects with the following structure: 
     { ideas: [{ title: string, template: string, topic: string, relevance: number, brief: string }, ...] }.`;
 
     const userPrompt = `Templates: ${templates.map(template => template.title).join(', ')}
     Partner: ${event.partner.name}
     Content Type: ${event.contentType}
-    Context Analysis: ${contextAnalysis}
     Context About the Authoring Partner: ${selfData}
-    Additional Context: ${additionalContext}`;
+    Partner Context: ${additionalContext}`;
 
     const response = await client.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -81,13 +80,8 @@ export const useContentIdeas = () => {
 
     try {
       const client = createOpenAIInstance();
-
-      // Step 1: Analyze context
-      const contextAnalysis = await analyzeContext(client, additionalContext, actualAdditionalContext);
-      console.log("🧙‍♂️ 🔎 -> ~ generateIdeas ~ contextAnalysis:", contextAnalysis)
       
-      // Step 2: Generate initial ideas
-      const initialIdeasWithoutContext = await createIdeas(client, event, contextAnalysis, '', additionalContext);
+      const initialIdeasWithoutContext = await createIdeas(client, event, '', additionalContext);
       
       const initialIdeas = [...initialIdeasWithoutContext];
 
