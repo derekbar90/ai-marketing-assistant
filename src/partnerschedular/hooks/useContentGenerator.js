@@ -1,14 +1,19 @@
 import { useState } from 'react';
 import OpenAI from 'openai';
+import { useSelfPartnerData } from '../../hooks/useSelfPartnerData';
 
 export const useContentGenerator = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const { querySelfData, results: selfData } = useSelfPartnerData(localStorage.getItem('chatgptApiKey'));
 
   const generateContent = async (event, selectedTemplate, contentSize, additionalContext, actualAdditionalContext, idea) => {
     setIsLoading(true);
     console.log('Generating content for event:', event);
 
     try {
+      // Query self partner data
+      await querySelfData(event.contentType);
+
       const apiKey = localStorage.getItem('chatgptApiKey');
       const client = new OpenAI({
         apiKey: apiKey,
@@ -16,8 +21,10 @@ export const useContentGenerator = () => {
       });
 
       const systemPrompt = `You are an AI assistant specialized in generating content for events. 
-      Your task is to create engaging and relevant content based on the provided template and event details. 
+      Your task is to create engaging and relevant content based on the provided template, event details, and self partner data. 
       Ensure the content is appropriate for the partner, content type, and occasion.`;
+
+      const selfDataContext = selfData.map(data => `File: ${data.filename}\nContent: ${data.content}`).join('\n\n');
 
       const userPrompt = `Template: ${selectedTemplate.content}
 
@@ -32,9 +39,12 @@ export const useContentGenerator = () => {
   User Provided Context: ${actualAdditionalContext}
   
   Content Idea: ${idea}
+
+  Self Partner Data:
+  ${selfDataContext}
   
   Please generate content that fits this template and these event details. 
-  The content should be engaging, relevant, and tailored to the specific partner and content type.`;
+  The content should be engaging, relevant, and tailored to the specific partner and content type, while incorporating insights from the self partner data.`;
 
       const maxTokens = contentSize;
 

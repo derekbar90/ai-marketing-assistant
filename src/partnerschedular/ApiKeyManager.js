@@ -22,20 +22,20 @@ export const ApiKeyManager = () => {
   };
 
   return (
-    <>
+    <div className="flex flex-row">
       <input
         type="password"
         value={apiKey}
         onChange={handleApiKeyChange}
         placeholder="Enter API Key"
-        className="mb-2 p-2 border rounded w-full"
+        className="mb-2 p-2 border rounded w-3/4"
       />
       <Button 
         onClick={handleSaveApiKey} 
-        className="mb-2 bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded w-full"
+        className="mb-2 bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
       >
         Save API Key
       </Button>
-    </>
+    </div>
   );
 };

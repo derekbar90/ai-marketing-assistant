@@ -61,7 +61,7 @@ export const PartnerSidebar = ({
           partner_id TEXT,
           filename TEXT,
           content TEXT,
-          embedding vector
+          embedding vector(1536)
         );
       `);
 

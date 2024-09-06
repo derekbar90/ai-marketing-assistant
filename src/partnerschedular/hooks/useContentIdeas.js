@@ -1,26 +1,33 @@
 import { useState } from 'react';
 import OpenAI from 'openai';
+import { useSelfPartnerData } from '../../hooks/useSelfPartnerData';
 
 export const useContentIdeas = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [contentIdeas, setContentIdeas] = useState([]);
+  const { querySelfData, results: selfData } = useSelfPartnerData(localStorage.getItem('chatgptApiKey'));
 
   const generateIdeas = async (event, selectedTemplate, additionalContext, actualAdditionalContext) => {
     setIsLoading(true);
     console.log('Generating content ideas for event:', event);
 
     try {
+      // Query self partner data
+      await querySelfData(event.contentType);
+
       const apiKey = localStorage.getItem('chatgptApiKey');
       const client = new OpenAI({
         apiKey: apiKey,
         dangerouslyAllowBrowser: true,
       });
 
-      const systemPrompt = `You are an AI assistant specialized in generating content ideas for posts. Review the tweets and additional context and provide ideas with a title, topic, and weight for relevance in the partner's marketing.
+      const systemPrompt = `You are an AI assistant specialized in generating content ideas for posts. Review the tweets, additional context, and self partner data to provide ideas with a title, topic, and weight for relevance in the partner's marketing.
       Ensure the ideas are appropriate for the partner, content type, and occasion. Provide as many ideas as possible.
-      The weight should be a number between 0 and 1, indicating how heavily the theme is being pushed in the partner's recent tweets.
+      The weight should be a number between 0 and 1, indicating how heavily the theme is being pushed in the partner's recent tweets and self partner data.
       Provide the ideas as a JSON array of objects with the following structure: 
       { ideas: [{ title: string, topic: string, weight: number }, ...] }`;
+
+      const selfDataContext = selfData.map(data => `File: ${data.filename}\nContent: ${data.content}`).join('\n\n');
 
       const userPrompt = `Template: ${selectedTemplate.content}
 
@@ -30,6 +37,9 @@ export const useContentIdeas = () => {
   Recent Partner (Tweets): ${additionalContext}
   
   User Provided Context: ${actualAdditionalContext}
+
+  Self Partner Data:
+  ${selfDataContext}
   `;
 
       const response = await client.chat.completions.create({

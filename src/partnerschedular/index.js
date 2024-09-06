@@ -11,6 +11,7 @@ import { resolveConflicts } from './conflictResolution';
 import { exportToCSV } from './exportUtils';
 import { Button } from './../components/ui/button';
 import { generateUniqueId } from '../utils/eventUtils'; // Import generateUniqueId
+import { ApiKeyManager } from './ApiKeyManager';
 
 export const AppContext = createContext();
 
@@ -67,24 +68,26 @@ export const PartnerSchedulingApp = () => {
       <div className="p-4 mx-14 mx-auto">
         <h1 className="text-2xl font-bold mb-4">Partner Content Scheduling App</h1>
 
-        <div className="flex">
-          <div className="w-1/2 pr-2">
+        <div className="flex space-x-4">
+          <div className="w-1/2">
             <PartnerList />
           </div>
-          <div className="w-1/2 pl-2">
-            <Button
-              onClick={handleExport}
-              className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Export to CSV
-            </Button>
-
-            <Button
-              onClick={handleBulkAddClick}
-              className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Bulk Add Partners
-            </Button>
+          <div className="w-1/2 space-y-4">
+            <div className="flex space-x-2">
+              <Button
+                onClick={handleExport}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Export to CSV
+              </Button>
+              <Button
+                onClick={handleBulkAddClick}
+                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Bulk Add Partners
+              </Button>
+              <ApiKeyManager />
+            </div>
             <ScheduleGenerator onGenerate={handleGenerateSchedule} />
             <CalendarView onEventClick={handleEventClick} />
           </div>

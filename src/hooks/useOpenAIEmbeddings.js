@@ -4,7 +4,7 @@ import OpenAI from 'openai';
 export const useOpenAIEmbeddings = (apiKey) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [openai, setOpenai] = useState(null);
+  const [openai, setOpenai] = useState(new OpenAI({ apiKey: localStorage.getItem('chatgptApiKey'), dangerouslyAllowBrowser: true }));
 
   useEffect(() => {
     if (apiKey) {

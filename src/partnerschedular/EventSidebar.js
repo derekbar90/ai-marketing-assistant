@@ -5,13 +5,17 @@ import { Button } from '../components/ui/button';
 import { TemplateManager } from './TemplateManager';
 import { AppContext } from './index';
 import { useEventData } from './hooks/useEventData';
-import { ApiKeyManager } from './ApiKeyManager';
-import { ContentGenerator } from './ContentGenerator';
 import { ContentIdeas } from './ContentIdeas';
 import { TwitterTimeline } from './twitterTimeline';
-import { EventDetails } from './EventDetails';
 import { useContentGenerator } from './hooks/useContentGenerator';
 import ReactMarkdown from 'react-markdown';
+
+const EventDetailItem = ({ label, value }) => (
+  <div>
+    <p className="text-sm text-gray-600">{label}</p>
+    <p className="font-semibold">{value}</p>
+  </div>
+);
 
 export const EventSidebar = ({ event, onClose }) => {
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
@@ -55,14 +59,14 @@ export const EventSidebar = ({ event, onClose }) => {
   const handleSelectIdea = async (idea) => {
     try {
       const content = await generateContent(event, selectedTemplate, contentSize, additionalContext, actualAdditionalContext, idea.title);
-      dispatch({ 
-        type: 'UPDATE_EVENT_CONTENT', 
-        payload: { 
-          id: event.id, 
-          content, 
+      dispatch({
+        type: 'UPDATE_EVENT_CONTENT',
+        payload: {
+          id: event.id,
+          content,
           isApproved: false,
           selectedIdea: idea
-        } 
+        }
       });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to generate content. Please try again.' });
@@ -72,33 +76,76 @@ export const EventSidebar = ({ event, onClose }) => {
   const handleGenerateContent = async () => {
     try {
       const content = await generateContent(event, selectedTemplate, contentSize, additionalContext, actualAdditionalContext);
-      dispatch({ 
-        type: 'UPDATE_EVENT_CONTENT', 
-        payload: { 
-          id: event.id, 
-          content, 
+      dispatch({
+        type: 'UPDATE_EVENT_CONTENT',
+        payload: {
+          id: event.id,
+          content,
           isApproved: false
-        } 
+        }
       });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to generate content. Please try again.' });
     }
   };
 
-  
+
   // Find the most up-to-date event data from the state
   const currentEvent = state.schedule.find(e => e.id === event.id) || event;
 
   return (
-    <div className="fixed top-0 left-0 w-1/3 h-full bg-white shadow-lg z-50">
+    <div className="fixed top-0 left-0 w-2/3 h-full bg-white shadow-lg z-50">
       <Card className="h-full overflow-auto">
         <CardHeader>
           <CardTitle>Event Details</CardTitle>
           <Button onClick={onClose} className="absolute top-2 right-2">Close</Button>
         </CardHeader>
         <CardContent>
-          <EventDetails event={event} />
-          
+
+          <div className="mb-4 bg-white shadow-md rounded-lg p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold mb-1">{event.partner.name}</h2>
+                {event.partner.twitter && (
+                  <a
+                    href={`https://twitter.com/${event.partner.twitter}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline"
+                  >
+                    @{event.partner.twitter}
+                  </a>
+                )}
+              </div>
+              <div className="flex space-x-6">
+                <EventDetailItem label="Content Type" value={event.contentType} />
+                <div className="border-r border-gray-300 mx-2"></div>
+                <EventDetailItem label="Time Slot" value={event.timeSlot} />
+                <div className="border-r border-gray-300 mx-2"></div>
+                <EventDetailItem label="Date" value={new Date(event.date).toDateString()} />
+              </div>
+            </div>
+            <div className="flex flex-row space-x-4">
+                
+              <textarea
+                value={actualAdditionalContext}
+                onChange={(e) => setActualAdditionalContext(e.target.value)}
+                placeholder="Enter actual additional context"
+                className="mb-2 p-2 border rounded w-1/2"
+              />
+              <div className="w-1/2">
+                <TwitterTimeline twitterHandle={event.partner.twitter} />
+                <textarea
+                  value={additionalContext}
+                  onChange={(e) => setAdditionalContext(e.target.value)}
+                  placeholder="Enter additional context (Tweets)"
+                  className="mb-2 p-2 border rounded w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+
           <select
             value={selectedTemplate?.title || ''}
             onChange={(e) => setSelectedTemplate(state.templates.find(template => template.title === e.target.value))}
@@ -109,7 +156,7 @@ export const EventSidebar = ({ event, onClose }) => {
               <option key={index} value={template.title}>{template.title}</option>
             ))}
           </select>
-          
+
           <select
             value={contentSize}
             onChange={(e) => setContentSize(parseInt(e.target.value))}
@@ -120,23 +167,8 @@ export const EventSidebar = ({ event, onClose }) => {
             ))}
           </select>
 
-          <ApiKeyManager />
-
-          <textarea
-            value={additionalContext}
-            onChange={(e) => setAdditionalContext(e.target.value)}
-            placeholder="Enter additional context (Tweets)"
-            className="mb-2 p-2 border rounded w-full"
-          />
-          <textarea
-            value={actualAdditionalContext}
-            onChange={(e) => setActualAdditionalContext(e.target.value)}
-            placeholder="Enter actual additional context"
-            className="mb-2 p-2 border rounded w-full"
-          />
-
-          <Button 
-            onClick={handleGenerateContent} 
+          <Button
+            onClick={handleGenerateContent}
             className="mb-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
             disabled={isLoading}
           >
@@ -159,19 +191,17 @@ export const EventSidebar = ({ event, onClose }) => {
             onSelectIdea={handleSelectIdea}
           />
 
-          <Button 
-            onClick={handleApproveContent} 
+          <Button
+            onClick={handleApproveContent}
             className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
             disabled={!isApproved && !currentEvent.generatedContent}
           >
             {(!isApproved && !currentEvent.generatedContent) ? 'Approved' : 'Approve Content'}
           </Button>
-          
+
           <Button onClick={handleOpenTemplateManager} className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full">
             Manage Templates
           </Button>
-
-          <TwitterTimeline twitterHandle={event.partner.twitter} />
         </CardContent>
       </Card>
       {isTemplateManagerOpen && (

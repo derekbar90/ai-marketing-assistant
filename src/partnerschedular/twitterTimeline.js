@@ -32,6 +32,6 @@ export const TwitterTimeline = ({ twitterHandle }) => {
     }, [twitterHandle]); // Add twitterHandle to the dependency array
   
     return (
-      <div ref={timelineRef} style={{ overflowY: 'scroll', height: '500px' }}></div>
+      <div ref={timelineRef} style={{ overflowY: 'scroll', height: '200px' }}></div>
     );
   };
