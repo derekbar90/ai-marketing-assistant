@@ -1,4 +1,4 @@
-import React, { useReducer, createContext } from 'react';
+import React, { useReducer, createContext, useState } from 'react';
 import { usePGlite } from "@electric-sql/pglite-react";
 import { PartnerList } from './PartnerList';
 import { ScheduleGenerator } from './ScheduleGenerator';
@@ -15,12 +15,22 @@ import { Button } from './../components/ui/button';
 import { generateUniqueId } from '../utils/eventUtils';
 import { ApiKeyManager } from './ApiKeyManager';
 
-// ... other imports ...
+import { PGlite } from "@electric-sql/pglite"
+import { live } from "@electric-sql/pglite/live"
+import { vector } from "@electric-sql/pglite/vector"
+import { PGliteProvider } from "@electric-sql/pglite-react"
+import { ToastProvider } from '../components/ui/toast';
+
+const db = await PGlite.create({
+  extensions: { live, vector },
+  dataDir: 'idb://my-pgdata'
+})
 
 export const AppContext = createContext();
 
 export const PartnerSchedulingApp = () => {
   const [state, dispatch] = useReducer(appReducer, loadStateFromLocalStorage());
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
 
   const handleGenerateSchedule = () => {
     const newSchedule = generateSchedule(state).map(event => ({

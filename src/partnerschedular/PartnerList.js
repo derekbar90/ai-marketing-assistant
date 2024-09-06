@@ -76,8 +76,7 @@ export const PartnerList = () => {
   };
 
   const handleEditPartner = (partner) => {
-    setSelectedPartner(partner);
-    setSidebarOpen(true);
+    dispatch({ type: 'OPEN_PARTNER_SIDEBAR', payload: partner });
   };
 
   return (

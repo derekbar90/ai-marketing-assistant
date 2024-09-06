@@ -93,12 +93,19 @@ export const EventSidebar = () => {
 
   const currentEvent = state.schedule.find(e => e.id === selectedEvent.id) || selectedEvent;
 
+  const handleEditPartner = () => {
+    dispatch({ type: 'OPEN_PARTNER_SIDEBAR', payload: selectedEvent.partner });
+  };
+
   return (
     <div className="fixed top-0 left-0 w-2/3 h-full bg-white shadow-lg z-50">
       <Card className="h-full overflow-auto">
-        <CardHeader>
+        <CardHeader className="flex flex-row space-x-4 justify-between">
           <CardTitle>Event Details</CardTitle>
-          <Button onClick={handleClose} className="absolute top-2 right-2">Close</Button>
+          <div className="flex flex-row space-x-4">
+          <Button onClick={handleEditPartner} className="">Edit Partner</Button>
+          <Button onClick={handleClose} className="">Close</Button>
+          </div>
         </CardHeader>
         <CardContent>
 
