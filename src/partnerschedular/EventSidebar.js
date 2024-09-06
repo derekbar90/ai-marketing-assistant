@@ -9,7 +9,7 @@ import { ContentIdeas } from './ContentIdeas';
 import { TwitterTimeline } from './twitterTimeline';
 import { useContentGenerator } from './hooks/useContentGenerator';
 import ReactMarkdown from 'react-markdown';
-
+import { PartnerAssumptions } from './PartnerAssumptions';
 const EventDetailItem = ({ label, value }) => (
   <div>
     <p className="text-sm text-gray-600">{label}</p>
@@ -127,12 +127,9 @@ export const EventSidebar = ({ event, onClose }) => {
             </div>
             <div className="flex flex-row space-x-4">
                 
-              <textarea
-                value={actualAdditionalContext}
-                onChange={(e) => setActualAdditionalContext(e.target.value)}
-                placeholder="Enter actual additional context"
-                className="mb-2 p-2 border rounded w-1/2"
-              />
+              <div className="w-1/2">
+              <PartnerAssumptions partner={event.partner} dispatch={dispatch} />
+              </div>
               <div className="w-1/2">
                 <TwitterTimeline twitterHandle={event.partner.twitter} />
                 <textarea
@@ -144,8 +141,22 @@ export const EventSidebar = ({ event, onClose }) => {
               </div>
             </div>
           </div>
+          <ContentIdeas
+            event={event}
+            selectedTemplate={selectedTemplate}
+            additionalContext={additionalContext}
+            actualAdditionalContext={actualAdditionalContext}
+            onSelectIdea={handleSelectIdea}
+          />
 
-
+          <div className="flex flex-row space-x-4">
+          <textarea
+          value={actualAdditionalContext}
+          onChange={(e) => setActualAdditionalContext(e.target.value)}
+          placeholder="Enter actual additional context"
+          className="mb-2 p-2 border rounded w-1/2"
+          />
+          <div className="flex flex-col space-x-4 w-1/2">
           <select
             value={selectedTemplate?.title || ''}
             onChange={(e) => setSelectedTemplate(state.templates.find(template => template.title === e.target.value))}
@@ -174,23 +185,6 @@ export const EventSidebar = ({ event, onClose }) => {
           >
             {isLoading ? 'Generating Content...' : 'Generate Content'}
           </Button>
-
-          {currentEvent.generatedContent && (
-            <div className="mt-4 p-2 border rounded bg-gray-100">
-              <h3 className="text-lg font-bold">Generated Content</h3>
-              {currentEvent.selectedIdea && <p><strong>Selected Idea:</strong> {currentEvent.selectedIdea.title}</p>}
-              <ReactMarkdown>{currentEvent.generatedContent}</ReactMarkdown>
-            </div>
-          )}
-
-          <ContentIdeas
-            event={event}
-            selectedTemplate={selectedTemplate}
-            additionalContext={additionalContext}
-            actualAdditionalContext={actualAdditionalContext}
-            onSelectIdea={handleSelectIdea}
-          />
-
           <Button
             onClick={handleApproveContent}
             className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
@@ -202,6 +196,15 @@ export const EventSidebar = ({ event, onClose }) => {
           <Button onClick={handleOpenTemplateManager} className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full">
             Manage Templates
           </Button>
+          </div>
+          </div>
+          {currentEvent.generatedContent && (
+            <div className="mt-4 p-2 border rounded bg-gray-100">
+              <h3 className="text-lg font-bold">Generated Content</h3>
+              {currentEvent.selectedIdea && <p><strong>Selected Idea:</strong> {currentEvent.selectedIdea.title}</p>}
+              <ReactMarkdown>{currentEvent.generatedContent}</ReactMarkdown>
+            </div>
+          )}
         </CardContent>
       </Card>
       {isTemplateManagerOpen && (

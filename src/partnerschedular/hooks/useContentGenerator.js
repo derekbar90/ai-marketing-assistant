@@ -4,7 +4,7 @@ import { useSelfPartnerData } from '../../hooks/useSelfPartnerData';
 
 export const useContentGenerator = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { querySelfData, results: selfData } = useSelfPartnerData(localStorage.getItem('chatgptApiKey'));
+  const { queryEmbeddedFiles, results: selfData } = useSelfPartnerData();
 
   const generateContent = async (event, selectedTemplate, contentSize, additionalContext, actualAdditionalContext, idea) => {
     setIsLoading(true);
@@ -12,7 +12,7 @@ export const useContentGenerator = () => {
 
     try {
       // Query self partner data
-      await querySelfData(event.contentType);
+      await queryEmbeddedFiles(event.contentType);
 
       const apiKey = localStorage.getItem('chatgptApiKey');
       const client = new OpenAI({

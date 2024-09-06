@@ -9,6 +9,7 @@ export const PartnerAssumptions = ({ partner, dispatch, onUpdate }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [newAssumption, setNewAssumption] = useState('');
   const [error, setError] = useState(null);  // Add this line
+  const [assumptionType, setAssumptionType] = useState('');
   const apiKey = localStorage.getItem('chatgptApiKey');
   const { getCompletion } = useOpenAI(apiKey);
   const { queryEmbeddedFiles, generatePrompt } = usePartnerEmbeddedFiles(partner.id, apiKey);
@@ -17,7 +18,7 @@ export const PartnerAssumptions = ({ partner, dispatch, onUpdate }) => {
     setIsGenerating(true);
     setError(null);  // Reset error state
     try {
-      const query = "Generate a list of assumptions about the partner";
+      const query = `Generate a list of assumptions about the partner focusing on ${assumptionType || 'general aspects'}`;
       const results = await queryEmbeddedFiles(query);
       
       if (results.length === 0) {
@@ -29,14 +30,33 @@ export const PartnerAssumptions = ({ partner, dispatch, onUpdate }) => {
         dangerouslyAllowBrowser: true,
       });
 
-      const systemPrompt = `You are an AI assistant specialized in generating assumptions about partners. Review the provided partner information and generate a list of assumptions. Provide the assumptions as a JSON array of objects with the following structure: 
-      { assumptions: [{ assumption: string }, ...] }. They assumptions should be concise and to the point. You should provide 5 assumptions which are all different and provide a high level overview of the partners goals and what they are doing long term.`;
+      const systemPrompt = `You are an AI assistant specialized in generating insightful assumptions about business partners based on provided information. Your task is to:
 
+      1. Carefully review the partner information provided.
+      2. Generate 5 distinct, concise assumptions focusing on ${assumptionType || 'the partner\'s general business aspects'}.
+      3. Ensure each assumption is no more than 10 words long.
+      4. Focus specifically on ${assumptionType || 'the partner\'s goals and long-term plans'}.
+      5. Provide a high-level overview without speculating beyond the given information.
+      
+      Return the assumptions as a JSON array of objects with the following structure:
+      { 
+        "assumptions": [
+          { "assumption": "string" },
+          ...
+        ] 
+      }
+      
+      If there's insufficient information to make any assumptions, return an empty array.
+      
+      Important: Do not invent or assume information not present in the provided data.`;
+      
       const userPrompt = `Partner: ${partner.name}
-
+      
       Partner Information:
-      ${results.map(data => `File: ${data.filename}\nContent: ${data.content}`).join('\n\n')}
-      `;
+      ${results.map(data => `File: ${data.filename}
+      Content: ${data.content}`).join('\n\n')}
+      
+      Based on this information, please generate 5 concise assumptions about ${assumptionType || 'the partner\'s general business aspects'}.`;
 
       const response = await client.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -51,19 +71,19 @@ export const PartnerAssumptions = ({ partner, dispatch, onUpdate }) => {
 
       const responseContent = response.choices[0].message.content;
       const parsedResponse = JSON.parse(responseContent);
-      const assumptions = parsedResponse.assumptions;
+      const newAssumptions = parsedResponse.assumptions;
 
-      if (!Array.isArray(assumptions)) {
+      if (!Array.isArray(newAssumptions)) {
         throw new Error('Generated assumptions are not in the correct format');
       }
 
       const updatedPartner = {
         ...partner,
-        assumptions: assumptions,
+        assumptions: [...(partner.assumptions || []), ...newAssumptions],
       };
       dispatch({
-        type: 'SET_PARTNER_ASSUMPTIONS',
-        payload: { partnerId: partner.id, assumptions },
+        type: 'ADD_PARTNER_ASSUMPTIONS',
+        payload: { partnerId: partner.id, assumptions: newAssumptions },
       });
       onUpdate(updatedPartner);
     } catch (error) {
@@ -102,31 +122,59 @@ export const PartnerAssumptions = ({ partner, dispatch, onUpdate }) => {
   };
 
   return (
-    <div className="bg-gray-100 p-4 rounded-lg mb-4">
-      <h3 className="font-bold mb-2">Partner Assumptions</h3>
-      <Button onClick={generateAssumptions} disabled={isGenerating} className="mb-2">
-        {isGenerating ? 'Generating...' : 'Generate Assumptions'}
-      </Button>
-      {error && <p className="text-red-500 mb-2">{error}</p>}
-      <div className="mb-2">
-        <Input
-          value={newAssumption}
-          onChange={(e) => setNewAssumption(e.target.value)}
-          placeholder="Add new assumption"
-          className="mb-1"
-        />
-        <Button onClick={addAssumption}>Add Assumption</Button>
+    <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+      <h3 className="text-xl font-semibold mb-4">Partner Assumptions</h3>
+      
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Input
+            value={assumptionType}
+            onChange={(e) => setAssumptionType(e.target.value)}
+            placeholder="Assumption type (e.g., business objectives)"
+            className="flex-grow"
+          />
+          <Button 
+            onClick={generateAssumptions} 
+            disabled={isGenerating}
+            className="whitespace-nowrap"
+          >
+            {isGenerating ? 'Generating...' : 'Generate'}
+          </Button>
+        </div>
+
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+
+        <div className="flex items-center space-x-2">
+          <Input
+            value={newAssumption}
+            onChange={(e) => setNewAssumption(e.target.value)}
+            placeholder="New assumption"
+            className="flex-grow"
+          />
+          <Button onClick={addAssumption}>Add</Button>
+        </div>
       </div>
-      <ul className="list-disc pl-5">
-        {partner.assumptions?.map((assumption, index) => (
-          <li key={index} className="mb-1 flex justify-between items-center">
-            <span>{assumption.assumption}</span>
-            <Button onClick={() => removeAssumption(index)} variant="destructive" size="sm">
-              Remove
-            </Button>
-          </li>
-        ))}
-      </ul>
+
+      {partner.assumptions && partner.assumptions.length > 0 && (
+        <div className="mt-6">
+          <h4 className="font-medium mb-2">Current Assumptions</h4>
+          <ul className="space-y-2">
+            {partner.assumptions.map((assumption, index) => (
+              <li key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                <span className="text-sm">{assumption.assumption}</span>
+                <Button 
+                  onClick={() => removeAssumption(index)} 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-red-500 hover:text-red-700"
+                >
+                  Remove
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };
