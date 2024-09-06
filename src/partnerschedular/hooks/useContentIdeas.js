@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import OpenAI from 'openai';
+import { createOpenAIInstance } from '../index';
 import { useSelfPartnerData } from '../../hooks/useSelfPartnerData';
 
 export const useContentIdeas = () => {
@@ -16,10 +16,7 @@ export const useContentIdeas = () => {
       await queryEmbeddedFiles(event.contentType);
 
       const apiKey = localStorage.getItem('chatgptApiKey');
-      const client = new OpenAI({
-        apiKey: apiKey,
-        dangerouslyAllowBrowser: true,
-      });
+      const client = createOpenAIInstance();
 
       const systemPrompt = `You are an AI assistant specialized in generating content ideas for posts. Review the tweets, additional context, and self partner data to provide ideas with a title, topic, and weight for relevance in the partner's marketing.
       Ensure the ideas are appropriate for the partner, content type, and occasion. Provide as many ideas as possible.

@@ -12,6 +12,7 @@ import { usePartnerEmbeddedFiles } from '../hooks/usePartnerEmbeddedFiles';
 import { useOpenAI } from '../hooks/useOpenAI';
 import { PartnerAssumptions } from './PartnerAssumptions';
 import { AppContext } from './index';
+import ReactMarkdown from 'react-markdown';
 
 export function splitText(text, chunkSize = 1000, chunkOverlap = 200) {
   const chunks = [];
@@ -43,14 +44,11 @@ export const PartnerSidebar = () => {
   const { state, dispatch } = useContext(AppContext);
   const { partnerSidebarOpen, selectedPartner } = state;
   const db = usePGlite();
-  const [fileContent, setFileContent] = useState('');
-  const [files, setFiles] = useState([]);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [apiKey, setApiKey] = useState(localStorage.getItem('chatgptApiKey') || '');
   const { getEmbedding, loading: embeddingLoading, error: embeddingError } = useOpenAIEmbeddings(apiKey);
-  const [embeddingStatus, setEmbeddingStatus] = useState({});
   const [query, setQuery] = useState('');
   const { queryEmbeddedFiles, results, loading: queryLoading, error: queryError, generatePrompt } = usePartnerEmbeddedFiles(selectedPartner?.id, apiKey);
   const { getCompletion } = useOpenAI(apiKey);
@@ -406,7 +404,11 @@ export const PartnerSidebar = () => {
                     <li key={result.id} className="mb-2">
                       <p className="font-medium">{result.filename}</p>
                       <p className="text-sm text-gray-600">Distance: {result.distance.toFixed(4)}</p>
-                      <p className="text-sm">{result.content.substring(0, 100)}...</p>
+                      <div className="text-sm bg-gray-50 p-2 rounded-md mt-1">
+                        <ReactMarkdown className="prose prose-sm">
+                          {result.content}
+                        </ReactMarkdown>
+                      </div>
                     </li>
                   ))}
                 </ul>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import OpenAI from 'openai';
+import { createOpenAIInstance } from '../index';
 import { useSelfPartnerData } from '../../hooks/useSelfPartnerData';
 
 export const useContentGenerator = () => {
@@ -14,11 +14,7 @@ export const useContentGenerator = () => {
       // Query self partner data
       await queryEmbeddedFiles(event.contentType);
 
-      const apiKey = localStorage.getItem('chatgptApiKey');
-      const client = new OpenAI({
-        apiKey: apiKey,
-        dangerouslyAllowBrowser: true,
-      });
+      const client = createOpenAIInstance();
 
       const systemPrompt = `You are an AI assistant specialized in generating content for events. 
       Your task is to create engaging and relevant content based on the provided template, event details, and self partner data. 

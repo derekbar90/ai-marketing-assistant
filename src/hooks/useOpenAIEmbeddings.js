@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import OpenAI from 'openai';
+import { createOpenAIInstance } from '../partnerschedular/index';
 
 export const useOpenAIEmbeddings = (apiKey) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [openai, setOpenai] = useState(new OpenAI({ apiKey: localStorage.getItem('chatgptApiKey'), dangerouslyAllowBrowser: true }));
+  const [openai, setOpenai] = useState(createOpenAIInstance());
 
   useEffect(() => {
     if (apiKey) {
-      setOpenai(new OpenAI({ apiKey: localStorage.getItem('chatgptApiKey'), dangerouslyAllowBrowser: true }));
+      setOpenai(createOpenAIInstance());
     }
   }, [apiKey]);
 

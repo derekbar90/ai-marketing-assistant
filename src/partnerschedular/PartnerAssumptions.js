@@ -3,7 +3,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useOpenAI } from '../hooks/useOpenAI';
 import { usePartnerEmbeddedFiles } from '../hooks/usePartnerEmbeddedFiles';
-import OpenAI from 'openai';
+import { createOpenAIInstance } from './index';
 
 export const PartnerAssumptions = ({ partner, dispatch, onUpdate }) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -25,10 +25,7 @@ export const PartnerAssumptions = ({ partner, dispatch, onUpdate }) => {
         throw new Error('No relevant files found for the partner');
       }
 
-      const client = new OpenAI({
-        apiKey: apiKey,
-        dangerouslyAllowBrowser: true,
-      });
+      const client = createOpenAIInstance();
 
       const systemPrompt = `You are an AI assistant specialized in generating insightful assumptions about business partners based on provided information. Your task is to:
 

@@ -14,6 +14,7 @@ import { exportToCSV } from './exportUtils';
 import { Button } from './../components/ui/button';
 import { generateUniqueId } from '../utils/eventUtils';
 import { ApiKeyManager } from './ApiKeyManager';
+import OpenAI from 'openai';
 
 import { PGlite } from "@electric-sql/pglite"
 import { live } from "@electric-sql/pglite/live"
@@ -27,6 +28,8 @@ const db = await PGlite.create({
 })
 
 export const AppContext = createContext();
+
+export const createOpenAIInstance = () => new OpenAI({ apiKey: localStorage.getItem('chatgptApiKey'), dangerouslyAllowBrowser: true });
 
 const runAppMigrations = async () => {
   try {
