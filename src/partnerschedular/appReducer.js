@@ -101,6 +101,11 @@ export const initialState = {
     timeSlots: ['morning', 'afternoon', 'evening'],
   },
   currentMonth: new Date(),
+  eventSidebarOpen: false,
+  selectedEvent: null,
+  partnerSidebarOpen: false,
+  selectedPartner: null,
+  templateManagerOpen: false,
 };
 
 export const loadStateFromLocalStorage = () => {
@@ -226,6 +231,46 @@ export const appReducer = (state, action) => {
             ? { ...partner, assumptions: partner.assumptions.filter((_, index) => index !== action.payload.index) }
             : partner
         ),
+      };
+
+    case 'OPEN_EVENT_SIDEBAR':
+      return {
+        ...state,
+        eventSidebarOpen: true,
+        selectedEvent: action.payload,
+      };
+
+    case 'CLOSE_EVENT_SIDEBAR':
+      return {
+        ...state,
+        eventSidebarOpen: false,
+        selectedEvent: null,
+      };
+
+    case 'OPEN_PARTNER_SIDEBAR':
+      return {
+        ...state,
+        partnerSidebarOpen: true,
+        selectedPartner: action.payload,
+      };
+
+    case 'CLOSE_PARTNER_SIDEBAR':
+      return {
+        ...state,
+        partnerSidebarOpen: false,
+        selectedPartner: null,
+      };
+
+    case 'OPEN_TEMPLATE_MANAGER':
+      return {
+        ...state,
+        templateManagerOpen: true,
+      };
+
+    case 'CLOSE_TEMPLATE_MANAGER':
+      return {
+        ...state,
+        templateManagerOpen: false,
       };
 
     default:

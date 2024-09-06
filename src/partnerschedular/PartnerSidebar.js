@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useContext } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Slider } from '../components/ui/slider';
@@ -11,16 +11,11 @@ import { useOpenAIEmbeddings } from '../hooks/useOpenAIEmbeddings';
 import { usePartnerEmbeddedFiles } from '../hooks/usePartnerEmbeddedFiles';
 import { useOpenAI } from '../hooks/useOpenAI';
 import { PartnerAssumptions } from './PartnerAssumptions';
+import { AppContext } from './index';
 
-export const PartnerSidebar = ({ 
-  isOpen, 
-  setIsOpen, 
-  selectedPartner, 
-  setSelectedPartner, 
-  dispatch, 
-  showColorPicker, 
-  setShowColorPicker 
-}) => {
+export const PartnerSidebar = () => {
+  const { state, dispatch } = useContext(AppContext);
+  const { partnerSidebarOpen, selectedPartner } = state;
   const db = usePGlite();
   const [fileContent, setFileContent] = useState('');
   const [files, setFiles] = useState([]);
@@ -118,10 +113,12 @@ export const PartnerSidebar = ({
     if (selectedPartner) {
       dispatch({ type: 'UPDATE_PARTNER_WEIGHT', payload: selectedPartner });
       dispatch({ type: 'UPDATE_PARTNER_TWITTER', payload: selectedPartner });
-
-      setIsOpen(false);
-      setSelectedPartner(null);
+      dispatch({ type: 'CLOSE_PARTNER_SIDEBAR' });
     }
+  };
+
+  const handleClose = () => {
+    dispatch({ type: 'CLOSE_PARTNER_SIDEBAR' });
   };
 
   const handleUploadFiles = async () => {
@@ -277,16 +274,18 @@ export const PartnerSidebar = ({
   };
 
   const handleAssumptionUpdate = (updatedPartner) => {
-    setSelectedPartner(updatedPartner);
+    dispatch({ type: 'UPDATE_PARTNER', payload: updatedPartner });
   };
 
+  if (!partnerSidebarOpen) return null;
+
   return (
-    <div className={`fixed top-0 right-0 h-full w-1/4 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto`}>
+    <div className={`fixed top-0 right-0 h-full w-1/4 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${partnerSidebarOpen ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto`}>
       <Button 
         className="absolute top-4 -left-10" 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleClose}
       >
-        {isOpen ? <ChevronRight /> : <ChevronLeft />}
+        <ChevronRight />
       </Button>
       {selectedPartner && (
         <div className="p-4">
@@ -296,13 +295,13 @@ export const PartnerSidebar = ({
           <div className="bg-gray-100 p-4 rounded-lg mb-4">
             <Input 
               value={selectedPartner.name} 
-              onChange={(e) => setSelectedPartner({...selectedPartner, name: e.target.value})} 
+              onChange={(e) => dispatch({ type: 'UPDATE_PARTNER', payload: { ...selectedPartner, name: e.target.value } })} 
               placeholder="Partner name" 
               className="mb-2"
             />
             <Input 
               value={selectedPartner.twitter || ''} 
-              onChange={(e) => setSelectedPartner({...selectedPartner, twitter: e.target.value})} 
+              onChange={(e) => dispatch({ type: 'UPDATE_PARTNER', payload: { ...selectedPartner, twitter: e.target.value } })} 
               placeholder="Twitter handle" 
               className="mb-2"
             />
@@ -313,12 +312,12 @@ export const PartnerSidebar = ({
               <div 
                 className="w-10 h-10 cursor-pointer mb-1 rounded-md border border-gray-300" 
                 style={{ backgroundColor: selectedPartner.color }} 
-                onClick={() => setShowColorPicker(!showColorPicker)}
+                onClick={() => dispatch({ type: 'TOGGLE_COLOR_PICKER' })}
               />
-              {showColorPicker && (
+              {state.showColorPicker && (
                 <SketchPicker 
                   color={selectedPartner.color} 
-                  onChangeComplete={(color) => setSelectedPartner({...selectedPartner, color: color.hex})} 
+                  onChangeComplete={(color) => dispatch({ type: 'UPDATE_PARTNER', payload: { ...selectedPartner, color: color.hex } })} 
                 />
               )}
             </div>
@@ -330,7 +329,7 @@ export const PartnerSidebar = ({
                 defaultValue={[selectedPartner.weight]}
                 max={100}
                 step={1}
-                onValueChange={(newValue) => setSelectedPartner({...selectedPartner, weight: newValue[0]})}
+                onValueChange={(newValue) => dispatch({ type: 'UPDATE_PARTNER', payload: { ...selectedPartner, weight: newValue[0] } })}
               />
             </div>
           </div>

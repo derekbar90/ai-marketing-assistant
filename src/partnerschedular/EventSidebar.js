@@ -17,26 +17,30 @@ const EventDetailItem = ({ label, value }) => (
   </div>
 );
 
-export const EventSidebar = ({ event, onClose }) => {
+export const EventSidebar = () => {
+  const { state, dispatch } = useContext(AppContext);
+  const { selectedEvent } = state;
+
+  if (!state.eventSidebarOpen) return null;
+
+  const handleClose = () => {
+    dispatch({ type: 'CLOSE_EVENT_SIDEBAR' });
+  };
+
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [contentSize, setContentSize] = useState(500);
   const [additionalContext, setAdditionalContext] = useState('');
   const [actualAdditionalContext, setActualAdditionalContext] = useState('');
 
-  const { state, dispatch } = useContext(AppContext);
-  const { isApproved, setIsApproved } = useEventData(event);
+  const { isApproved, setIsApproved } = useEventData(selectedEvent);
   const { generateContent, isLoading } = useContentGenerator();
-
-  // useEffect(() => {
-  //   console.log('Event in EventSidebar:', event);
-  // }, [event]);
 
   const handleOpenTemplateManager = () => setIsTemplateManagerOpen(true);
   const handleCloseTemplateManager = () => setIsTemplateManagerOpen(false);
 
   const handleApproveContent = () => {
-    dispatch({ type: 'APPROVE_EVENT_CONTENT', payload: { id: event.id } });
+    dispatch({ type: 'APPROVE_EVENT_CONTENT', payload: { id: selectedEvent.id } });
     setIsApproved(true);
   };
 
@@ -54,15 +58,13 @@ export const EventSidebar = ({ event, onClose }) => {
     { label: 'Long-form', value: 8000 }
   ];
 
-  if (!event) return null;
-
   const handleSelectIdea = async (idea) => {
     try {
-      const content = await generateContent(event, selectedTemplate, contentSize, additionalContext, actualAdditionalContext, idea.title);
+      const content = await generateContent(selectedEvent, selectedTemplate, contentSize, additionalContext, actualAdditionalContext, idea.title);
       dispatch({
         type: 'UPDATE_EVENT_CONTENT',
         payload: {
-          id: event.id,
+          id: selectedEvent.id,
           content,
           isApproved: false,
           selectedIdea: idea
@@ -75,11 +77,11 @@ export const EventSidebar = ({ event, onClose }) => {
 
   const handleGenerateContent = async () => {
     try {
-      const content = await generateContent(event, selectedTemplate, contentSize, additionalContext, actualAdditionalContext);
+      const content = await generateContent(selectedEvent, selectedTemplate, contentSize, additionalContext, actualAdditionalContext);
       dispatch({
         type: 'UPDATE_EVENT_CONTENT',
         payload: {
-          id: event.id,
+          id: selectedEvent.id,
           content,
           isApproved: false
         }
@@ -89,49 +91,47 @@ export const EventSidebar = ({ event, onClose }) => {
     }
   };
 
-
-  // Find the most up-to-date event data from the state
-  const currentEvent = state.schedule.find(e => e.id === event.id) || event;
+  const currentEvent = state.schedule.find(e => e.id === selectedEvent.id) || selectedEvent;
 
   return (
     <div className="fixed top-0 left-0 w-2/3 h-full bg-white shadow-lg z-50">
       <Card className="h-full overflow-auto">
         <CardHeader>
           <CardTitle>Event Details</CardTitle>
-          <Button onClick={onClose} className="absolute top-2 right-2">Close</Button>
+          <Button onClick={handleClose} className="absolute top-2 right-2">Close</Button>
         </CardHeader>
         <CardContent>
 
           <div className="mb-4 bg-white shadow-md rounded-lg p-6">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold mb-1">{event.partner.name}</h2>
-                {event.partner.twitter && (
+                <h2 className="text-2xl font-bold mb-1">{selectedEvent.partner.name}</h2>
+                {selectedEvent.partner.twitter && (
                   <a
-                    href={`https://twitter.com/${event.partner.twitter}`}
+                    href={`https://twitter.com/${selectedEvent.partner.twitter}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-500 hover:underline"
                   >
-                    @{event.partner.twitter}
+                    @{selectedEvent.partner.twitter}
                   </a>
                 )}
               </div>
               <div className="flex space-x-6">
-                <EventDetailItem label="Content Type" value={event.contentType} />
+                <EventDetailItem label="Content Type" value={selectedEvent.contentType} />
                 <div className="border-r border-gray-300 mx-2"></div>
-                <EventDetailItem label="Time Slot" value={event.timeSlot} />
+                <EventDetailItem label="Time Slot" value={selectedEvent.timeSlot} />
                 <div className="border-r border-gray-300 mx-2"></div>
-                <EventDetailItem label="Date" value={new Date(event.date).toDateString()} />
+                <EventDetailItem label="Date" value={new Date(selectedEvent.date).toDateString()} />
               </div>
             </div>
             <div className="flex flex-row space-x-4">
                 
               <div className="w-1/2">
-              <PartnerAssumptions partner={event.partner} dispatch={dispatch} />
+              <PartnerAssumptions partner={selectedEvent.partner} dispatch={dispatch} />
               </div>
               <div className="w-1/2">
-                <TwitterTimeline twitterHandle={event.partner.twitter} />
+                <TwitterTimeline twitterHandle={selectedEvent.partner.twitter} />
                 <textarea
                   value={additionalContext}
                   onChange={(e) => setAdditionalContext(e.target.value)}
@@ -142,7 +142,7 @@ export const EventSidebar = ({ event, onClose }) => {
             </div>
           </div>
           <ContentIdeas
-            event={event}
+            event={selectedEvent}
             selectedTemplate={selectedTemplate}
             additionalContext={additionalContext}
             actualAdditionalContext={actualAdditionalContext}
