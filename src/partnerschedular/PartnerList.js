@@ -122,40 +122,55 @@ export const PartnerList = () => {
               <Plus className="mr-2" /> Add Partner
             </Button>
           </div>
-          <ul>
+          <ul className="space-y-4">
             {Array.isArray(state.partners) && state.partners.map(partner => (
-              <li key={partner.id} className="flex justify-between items-center mb-2">
-                <div className="flex items-center mr-4 border-2 border-gray-300 rounded-md p-2">
+              <li key={partner.id} className="bg-white shadow-md rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
                   {partner.id === 'self' ? (
-                    <User className="w-4 h-4 mr-2" />
+                    <User className="w-6 h-6 text-gray-600" />
                   ) : (
                     <div 
-                      className="w-4 h-4 rounded-full border mr-2" 
+                      className="w-6 h-6 rounded-full border-2 border-gray-300" 
                       style={{ backgroundColor: partner.color }} 
                     />
                   )}
-                  <span className="text-lg">{partner.name}</span>
-                  {partner.twitter && (
-                    <a 
-                      href={`https://twitter.com/${partner.twitter}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="ml-2 text-blue-500"
+                  <div className="flex flex-col w-[150px]">
+                    <span className="text-lg font-semibold">{partner.name}</span>
+                    {partner.twitter && (
+                      <a 
+                        href={`https://twitter.com/${partner.twitter}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-sm text-blue-500 hover:text-blue-700 transition-colors"
+                      >
+                        @{partner.twitter}
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4 w-full">
+                  <Slider
+                    defaultValue={[partner.weight]}
+                    max={100}
+                    step={1}
+                    onValueChange={(newValue) => handleWeightChange(partner.id, newValue[0])}
+                    className="w-full"
+                  />
+                  <Button 
+                    onClick={() => handleEditPartner(partner)}
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors"
+                  >
+                    Edit
+                  </Button>
+                  {partner.id !== 'self' && (
+                    <Button 
+                      onClick={() => dispatch({ type: 'REMOVE_PARTNER', payload: partner.id })}
+                      className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors"
                     >
-                      @{partner.twitter}
-                    </a>
+                      Remove
+                    </Button>
                   )}
                 </div>
-                <Slider
-                  defaultValue={[partner.weight]}
-                  max={100}
-                  step={1}
-                  onValueChange={(newValue) => handleWeightChange(partner.id, newValue[0])}
-                  className="w-32 mx-4"
-                />
-                <Button onClick={() => handleEditPartner(partner)}>
-                  Edit
-                </Button>
               </li>
             ))}
           </ul>
