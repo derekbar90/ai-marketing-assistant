@@ -13,6 +13,7 @@ import { useOpenAI } from '../hooks/useOpenAI';
 import { PartnerAssumptions } from './PartnerAssumptions';
 import { AppContext } from './index';
 import ReactMarkdown from 'react-markdown';
+import { Progress } from '../components/ui/progress';
 
 export function splitText(text, chunkSize = 1000, chunkOverlap = 200) {
   const chunks = [];
@@ -55,6 +56,7 @@ export const PartnerSidebar = () => {
   const [answer, setAnswer] = useState('');
   const [answerLoading, setAnswerLoading] = useState(false);
   const [documents, setDocuments] = useState([]);
+  const [fileProgress, setFileProgress] = useState({});
 
   useEffect(() => {
     if (selectedPartner) {
@@ -105,6 +107,8 @@ export const PartnerSidebar = () => {
     for (const file of uploadedFiles) {
       if (file.content) {
         try {
+          setFileProgress(prev => ({ ...prev, [file.name]: { status: 'processing', progress: 0 } }));
+          
           // Insert document
           const docResult = await db.query(`
             INSERT INTO partner_documents (partner_id, filename)
@@ -122,13 +126,22 @@ export const PartnerSidebar = () => {
                 INSERT INTO partner_chunks (document_id, content, embedding, chunk_index)
                 VALUES ($1, $2, $3::vector, $4);
               `, [documentId, chunks[i], embeddingString, i]);
+              
+              // Update progress
+              const progress = Math.round(((i + 1) / chunks.length) * 100);
+              setFileProgress(prev => ({ 
+                ...prev, 
+                [file.name]: { status: 'processing', progress } 
+              }));
             } else {
               throw new Error('Failed to get embedding');
             }
           }
+          setFileProgress(prev => ({ ...prev, [file.name]: { status: 'done', progress: 100 } }));
           setToast({ show: true, message: `Successfully uploaded ${file.name}`, type: 'success' });
         } catch (error) {
           console.error('Error inserting file:', error);
+          setFileProgress(prev => ({ ...prev, [file.name]: { status: 'error', progress: 0 } }));
           setToast({ show: true, message: `Error uploading ${file.name}: ${error.message}`, type: 'error' });
         }
       }
@@ -327,10 +340,22 @@ export const PartnerSidebar = () => {
             {uploadedFiles.length > 0 && (
               <div className="mt-2">
                 <h4 className="font-semibold mb-1">Files to upload:</h4>
-                <ul className="list-disc pl-5">
+                <ul className="space-y-2">
                   {uploadedFiles.map((file, index) => (
                     <li key={index} className="text-sm">
-                      {file.name} {file.content ? '(Ready)' : '(Loading...)'}
+                      <div className="flex items-center justify-between">
+                        <span>{file.name}</span>
+                        <span className="text-xs">
+                          {fileProgress[file.name]?.status === 'processing' && `${fileProgress[file.name].progress}%`}
+                          {fileProgress[file.name]?.status === 'done' && 'Done'}
+                          {fileProgress[file.name]?.status === 'error' && 'Error'}
+                          {!fileProgress[file.name] && 'Waiting'}
+                        </span>
+                      </div>
+                      <Progress 
+                        value={fileProgress[file.name]?.progress || 0} 
+                        className="h-1 mt-1"
+                      />
                     </li>
                   ))}
                 </ul>
