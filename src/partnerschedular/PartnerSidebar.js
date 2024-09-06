@@ -51,12 +51,13 @@ export const PartnerSidebar = () => {
   const [apiKey, setApiKey] = useState(localStorage.getItem('chatgptApiKey') || '');
   const { getEmbedding, loading: embeddingLoading, error: embeddingError } = useOpenAIEmbeddings(apiKey);
   const [query, setQuery] = useState('');
-  const { queryEmbeddedFiles, results, loading: queryLoading, error: queryError, generatePrompt } = usePartnerEmbeddedFiles(selectedPartner?.id, apiKey);
+  const { queryEmbeddedFiles, loading: queryLoading, error: queryError, generatePrompt } = usePartnerEmbeddedFiles(selectedPartner?.id, apiKey);
   const { getCompletion } = useOpenAI(apiKey);
   const [answer, setAnswer] = useState('');
   const [answerLoading, setAnswerLoading] = useState(false);
   const [documents, setDocuments] = useState([]);
   const [fileProgress, setFileProgress] = useState({});
+  const [results, setResults] = useState([]);
 
   useEffect(() => {
     if (selectedPartner) {
@@ -239,8 +240,9 @@ export const PartnerSidebar = () => {
     if (query.trim()) {
       setAnswerLoading(true);
       try {
-        await queryEmbeddedFiles(query);
-        const prompt = generatePrompt(query, results);
+        const queryResults = await queryEmbeddedFiles(query);
+        setResults(queryResults); // Update the results state
+        const prompt = generatePrompt(query, queryResults);
         const completion = await getCompletion(prompt);
         setAnswer(completion);
       } catch (error) {
@@ -419,7 +421,7 @@ export const PartnerSidebar = () => {
                 <p className="text-sm bg-white p-2 rounded-md">{answer}</p>
               </div>
             )}
-            {results.length > 0 && (
+            {results && results.length > 0 && (
               <div className="mt-4">
                 <h4 className="font-semibold mb-1">Relevant Files:</h4>
                 <ul className="list-disc pl-5">

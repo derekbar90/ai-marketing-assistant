@@ -5,7 +5,7 @@ import { useSelfPartnerData } from '../../hooks/useSelfPartnerData';
 export const useContentIdeas = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [contentIdeas, setContentIdeas] = useState([]);
-  const { queryEmbeddedFiles, results: selfData } = useSelfPartnerData();
+  const { queryEmbeddedFiles, loading: selfDataLoading, error: selfDataError } = useSelfPartnerData();
 
   const generateIdeas = async (event, selectedTemplate, additionalContext, actualAdditionalContext) => {
     setIsLoading(true);
@@ -13,7 +13,8 @@ export const useContentIdeas = () => {
 
     try {
       // Query self partner data
-      await queryEmbeddedFiles(event.contentType);
+      const selfData = await queryEmbeddedFiles(event.contentType);
+      if (selfDataError) throw new Error(selfDataError);
 
       const apiKey = localStorage.getItem('chatgptApiKey');
       const client = createOpenAIInstance();
@@ -69,5 +70,5 @@ export const useContentIdeas = () => {
     }
   };
 
-  return { isLoading, contentIdeas, generateIdeas };
+  return { isLoading: isLoading || selfDataLoading, contentIdeas, generateIdeas };
 };

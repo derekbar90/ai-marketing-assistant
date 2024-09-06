@@ -4,7 +4,6 @@ import { useOpenAIEmbeddings } from './useOpenAIEmbeddings';
 
 export const usePartnerEmbeddedFiles = (partnerId, apiKey) => {
   const db = usePGlite();
-  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { getEmbedding } = useOpenAIEmbeddings(apiKey);
@@ -27,12 +26,11 @@ export const usePartnerEmbeddedFiles = (partnerId, apiKey) => {
         LIMIT $3;
       `, [embeddingString, partnerId, limit]);
 
-      setResults(result.rows);
-      return result.rows; // Return the results directly
+      return result.rows;
     } catch (err) {
       console.error('Error querying embedded files:', err);
       setError(err.message);
-      return []; // Return an empty array in case of error
+      return [];
     } finally {
       setLoading(false);
     }
@@ -49,5 +47,5 @@ export const usePartnerEmbeddedFiles = (partnerId, apiKey) => {
     `;
   }, []);
 
-  return { queryEmbeddedFiles, results, loading, error, generatePrompt };
+  return { queryEmbeddedFiles, loading, error, generatePrompt };
 };

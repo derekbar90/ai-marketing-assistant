@@ -4,7 +4,7 @@ import { useSelfPartnerData } from '../../hooks/useSelfPartnerData';
 
 export const useContentGenerator = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { queryEmbeddedFiles, results: selfData } = useSelfPartnerData();
+  const { queryEmbeddedFiles, loading: selfDataLoading, error: selfDataError } = useSelfPartnerData();
 
   const generateContent = async (event, selectedTemplate, contentSize, additionalContext, actualAdditionalContext, idea) => {
     setIsLoading(true);
@@ -12,7 +12,8 @@ export const useContentGenerator = () => {
 
     try {
       // Query self partner data
-      await queryEmbeddedFiles(event.contentType);
+      const selfData = await queryEmbeddedFiles(event.contentType);
+      if (selfDataError) throw new Error(selfDataError);
 
       const client = createOpenAIInstance();
 
@@ -66,5 +67,5 @@ export const useContentGenerator = () => {
     }
   };
 
-  return { isLoading, generateContent };
+  return { isLoading: isLoading || selfDataLoading, generateContent };
 };

@@ -4,7 +4,6 @@ import { useOpenAIEmbeddings } from './useOpenAIEmbeddings';
 
 export const useSelfPartnerData = () => {
   const db = usePGlite();
-  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { getEmbedding } = useOpenAIEmbeddings(localStorage.getItem('chatgptApiKey'));
@@ -27,10 +26,11 @@ export const useSelfPartnerData = () => {
         LIMIT $3;
       `, [embeddingString, 'self', limit]);
 
-      setResults(result.rows);
+      return result.rows;
     } catch (err) {
       console.error('Error querying embedded files:', err);
       setError(err.message);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -50,5 +50,5 @@ export const useSelfPartnerData = () => {
     `;
   }, []);
 
-  return { queryEmbeddedFiles, results, loading, error, generatePrompt };
+  return { queryEmbeddedFiles, loading, error, generatePrompt };
 };
