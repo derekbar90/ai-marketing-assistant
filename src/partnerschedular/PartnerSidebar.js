@@ -13,6 +13,32 @@ import { useOpenAI } from '../hooks/useOpenAI';
 import { PartnerAssumptions } from './PartnerAssumptions';
 import { AppContext } from './index';
 
+export function splitText(text, chunkSize = 1000, chunkOverlap = 200) {
+  const chunks = [];
+  let startIndex = 0;
+
+  while (startIndex < text.length) {
+    let endIndex = startIndex + chunkSize;
+    
+    // Adjust end index to avoid splitting words
+    if (endIndex < text.length) {
+      while (endIndex > startIndex && !text[endIndex].match(/\s/)) {
+        endIndex--;
+      }
+    }
+
+    // If we couldn't find a space, just use the original end index
+    if (endIndex === startIndex) {
+      endIndex = startIndex + chunkSize;
+    }
+
+    chunks.push(text.slice(startIndex, endIndex).trim());
+    startIndex = endIndex - chunkOverlap;
+  }
+
+  return chunks;
+}
+
 export const PartnerSidebar = () => {
   const { state, dispatch } = useContext(AppContext);
   const { partnerSidebarOpen, selectedPartner } = state;
@@ -57,7 +83,8 @@ export const PartnerSidebar = () => {
           partner_id TEXT,
           filename TEXT,
           content TEXT,
-          embedding vector(1536)
+          embedding vector(1536),
+          chunk_index INTEGER
         );
       `);
 
@@ -68,20 +95,6 @@ export const PartnerSidebar = () => {
       `);
 
       console.log('partner_files table created or already exists');
-
-      // Verify table creation
-      const tableCheckResult = await db.query(`
-        SELECT EXISTS (
-          SELECT 1 FROM information_schema.tables WHERE table_name = 'partner_files'
-        );
-      `);
-      const tableExists = tableCheckResult.rows[0].exists;
-
-      if (tableExists) {
-        console.log('partner_files table exists');
-      } else {
-        console.error('Failed to create partner_files table');
-      }
     } catch (error) {
       console.error('Error in createPartnerFilesTable:', error);
     }
@@ -98,11 +111,9 @@ export const PartnerSidebar = () => {
         setFiles(result.rows);
       } catch (error) {
         console.error('Error fetching files:', error);
-        // Check if the error is due to the table not existing
         if (error.message.includes('relation "partner_files" does not exist')) {
           console.log('partner_files table does not exist. Attempting to create it...');
           await createPartnerFilesTable();
-          // Retry fetching files
           await fetchFiles();
         }
       }
@@ -127,21 +138,29 @@ export const PartnerSidebar = () => {
       return;
     }
 
+    if (!selectedPartner) {
+      setToast({ show: true, message: 'No partner selected', type: 'error' });
+      return;
+    }
+
     setIsUploading(true);
     for (const file of uploadedFiles) {
       if (file.content) {
         try {
-          const embedding = await getEmbedding(file.content);
-          if (embedding) {
-            // Convert the embedding array to a PostgreSQL array literal
-            const embeddingString = `[${embedding.join(',')}]`;
-            await db.query(`
-              INSERT INTO partner_files (partner_id, filename, content, embedding)
-              VALUES ($1, $2, $3, $4::vector);
-            `, [selectedPartner.id, file.name, file.content, embeddingString]);
-          } else {
-            throw new Error('Failed to get embedding');
+          const chunks = splitText(file.content);
+          for (let i = 0; i < chunks.length; i++) {
+            const embedding = await getEmbedding(chunks[i]);
+            if (embedding) {
+              const embeddingString = `[${embedding.join(',')}]`;
+              await db.query(`
+                INSERT INTO partner_files (partner_id, filename, content, embedding, chunk_index)
+                VALUES ($1, $2, $3, $4::vector, $5);
+              `, [selectedPartner.id, file.name, chunks[i], embeddingString, i]);
+            } else {
+              throw new Error('Failed to get embedding');
+            }
           }
+          setToast({ show: true, message: `Successfully uploaded ${file.name}`, type: 'success' });
         } catch (error) {
           console.error('Error inserting file:', error);
           setToast({ show: true, message: `Error uploading ${file.name}: ${error.message}`, type: 'error' });
@@ -151,7 +170,6 @@ export const PartnerSidebar = () => {
     await fetchFiles();
     setUploadedFiles([]);
     setIsUploading(false);
-    setToast({ show: true, message: 'Files uploaded successfully', type: 'success' });
   };
 
   const onDrop = useCallback((acceptedFiles) => {
@@ -373,7 +391,7 @@ export const PartnerSidebar = () => {
                 <Button 
                   onClick={handleUploadFiles} 
                   className="mt-2" 
-                  disabled={isUploading || uploadedFiles.some(file => !file.content)}
+                  disabled={isUploading || uploadedFiles.length === 0 || uploadedFiles.some(file => !file.content)}
                 >
                   {isUploading ? 'Uploading...' : 'Upload Files'}
                 </Button>
