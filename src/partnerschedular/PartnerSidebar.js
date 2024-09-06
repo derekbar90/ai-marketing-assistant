@@ -10,6 +10,7 @@ import { Toast } from '../components/ui/toast';
 import { useOpenAIEmbeddings } from '../hooks/useOpenAIEmbeddings';
 import { usePartnerEmbeddedFiles } from '../hooks/usePartnerEmbeddedFiles';
 import { useOpenAI } from '../hooks/useOpenAI';
+import { PartnerAssumptions } from './PartnerAssumptions';
 
 export const PartnerSidebar = ({ 
   isOpen, 
@@ -275,6 +276,10 @@ export const PartnerSidebar = ({
     }
   };
 
+  const handleAssumptionUpdate = (updatedPartner) => {
+    setSelectedPartner(updatedPartner);
+  };
+
   return (
     <div className={`fixed top-0 right-0 h-full w-1/4 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto`}>
       <Button 
@@ -441,6 +446,13 @@ export const PartnerSidebar = ({
               </div>
             )}
           </div>
+
+          {/* Partner Assumptions Section */}
+          <PartnerAssumptions 
+            partner={selectedPartner} 
+            dispatch={dispatch} 
+            onUpdate={handleAssumptionUpdate}
+          />
           
           {/* Action Buttons */}
           <div className="flex justify-between">

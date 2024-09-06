@@ -198,6 +198,36 @@ export const appReducer = (state, action) => {
           partner.id === action.payload.id ? action.payload : partner
         ) 
       };
+    case 'SET_PARTNER_ASSUMPTIONS':
+      return {
+        ...state,
+        partners: state.partners.map(partner =>
+          partner.id === action.payload.partnerId
+            ? { ...partner, assumptions: action.payload.assumptions }
+            : partner
+        ),
+      };
+
+    case 'ADD_PARTNER_ASSUMPTION':
+      return {
+        ...state,
+        partners: state.partners.map(partner =>
+          partner.id === action.payload.partnerId
+            ? { ...partner, assumptions: [...(partner.assumptions || []), action.payload.assumption] }
+            : partner
+        ),
+      };
+
+    case 'REMOVE_PARTNER_ASSUMPTION':
+      return {
+        ...state,
+        partners: state.partners.map(partner =>
+          partner.id === action.payload.partnerId
+            ? { ...partner, assumptions: partner.assumptions.filter((_, index) => index !== action.payload.index) }
+            : partner
+        ),
+      };
+
     default:
       return state;
   }
