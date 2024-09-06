@@ -3,6 +3,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useOpenAI } from '../hooks/useOpenAI';
 import { usePartnerEmbeddedFiles } from '../hooks/usePartnerEmbeddedFiles';
+import OpenAI from 'openai';
 
 export const PartnerAssumptions = ({ partner, dispatch, onUpdate }) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -23,18 +24,37 @@ export const PartnerAssumptions = ({ partner, dispatch, onUpdate }) => {
         throw new Error('No relevant files found for the partner');
       }
 
-      const prompt = generatePrompt(query, results);
-      const completion = await getCompletion(prompt);
-      
-      let assumptions;
-      try {
-        assumptions = JSON.parse(completion);
-        if (!Array.isArray(assumptions)) {
-          throw new Error('Generated assumptions are not in the correct format');
-        }
-      } catch (error) {
-        console.error('Error parsing assumptions:', error);
-        assumptions = completion.split('\n').filter(line => line.trim() !== '').map(line => ({ assumption: line.trim() }));
+      const client = new OpenAI({
+        apiKey: apiKey,
+        dangerouslyAllowBrowser: true,
+      });
+
+      const systemPrompt = `You are an AI assistant specialized in generating assumptions about partners. Review the provided partner information and generate a list of assumptions. Provide the assumptions as a JSON array of objects with the following structure: 
+      { assumptions: [{ assumption: string }, ...] }. They assumptions should be concise and to the point. You should provide 5 assumptions which are all different and provide a high level overview of the partners goals and what they are doing long term.`;
+
+      const userPrompt = `Partner: ${partner.name}
+
+      Partner Information:
+      ${results.map(data => `File: ${data.filename}\nContent: ${data.content}`).join('\n\n')}
+      `;
+
+      const response = await client.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+        response_format: { type: "json_object" }
+      });
+
+      const responseContent = response.choices[0].message.content;
+      const parsedResponse = JSON.parse(responseContent);
+      const assumptions = parsedResponse.assumptions;
+
+      if (!Array.isArray(assumptions)) {
+        throw new Error('Generated assumptions are not in the correct format');
       }
 
       const updatedPartner = {
