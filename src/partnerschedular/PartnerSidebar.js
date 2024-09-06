@@ -326,7 +326,7 @@ export const PartnerSidebar = () => {
           {/* File Upload Section */}
           <div className="bg-gray-100 p-4 rounded-lg mb-4">
             <h3 className="font-bold mb-2">Upload Files</h3>
-            <div {...getRootProps()} className="border-2 border-dashed p-4 mb-2 cursor-pointer rounded-md hover:bg-gray-200 transition-colors">
+            <div {...getRootProps()} className="border-2 border-dashed p-4 mb-2 cursor-pointer rounded-md hover:bg-gray-200 transition-colors h-32 flex items-center justify-center">
               <input {...getInputProps()} />
               {isDragActive ? (
                 <p>Drop the files here ...</p>

@@ -204,7 +204,8 @@ export const appReducer = (state, action) => {
         ) 
       };
     case 'SET_PARTNER_ASSUMPTIONS':
-      return {
+      console.log('Setting partner assumptions. Payload:', action.payload);
+      const stateAfterSet = {
         ...state,
         partners: state.partners.map(partner =>
           partner.id === action.payload.partnerId
@@ -212,9 +213,12 @@ export const appReducer = (state, action) => {
             : partner
         ),
       };
+      console.log('State after setting partner assumptions:', stateAfterSet);
+      return stateAfterSet;
 
     case 'ADD_PARTNER_ASSUMPTION':
-      return {
+      console.log('Adding partner assumption. Payload:', action.payload);
+      const stateAfterAdd = {
         ...state,
         partners: state.partners.map(partner =>
           partner.id === action.payload.partnerId
@@ -222,9 +226,25 @@ export const appReducer = (state, action) => {
             : partner
         ),
       };
+      console.log('State after adding partner assumption:', stateAfterAdd);
+      return stateAfterAdd;
+
+    case 'ADD_PARTNER_ASSUMPTIONS':
+      console.log('Adding multiple partner assumptions. Payload:', action.payload);
+      const stateAfterMultiAdd = {
+        ...state,
+        partners: state.partners.map(partner =>
+          partner.id === action.payload.partnerId
+            ? { ...partner, assumptions: [...(partner.assumptions || []), ...action.payload.assumptions] }
+            : partner
+        ),
+      };
+      console.log('State after adding multiple partner assumptions:', stateAfterMultiAdd);
+      return stateAfterMultiAdd;
 
     case 'REMOVE_PARTNER_ASSUMPTION':
-      return {
+      console.log('Removing partner assumption. Payload:', action.payload);
+      const stateAfterRemove = {
         ...state,
         partners: state.partners.map(partner =>
           partner.id === action.payload.partnerId
@@ -232,6 +252,8 @@ export const appReducer = (state, action) => {
             : partner
         ),
       };
+      console.log('State after removing partner assumption:', stateAfterRemove);
+      return stateAfterRemove;
 
     case 'OPEN_EVENT_SIDEBAR':
       return {

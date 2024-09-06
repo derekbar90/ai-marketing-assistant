@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useOpenAI } from '../hooks/useOpenAI';
 import { usePartnerEmbeddedFiles } from '../hooks/usePartnerEmbeddedFiles';
 import { createOpenAIInstance } from './index';
+import { AppContext } from './index';
 
-export const PartnerAssumptions = ({ partner, dispatch, onUpdate }) => {
+export const PartnerAssumptions = ({}) => {
+  const { state, dispatch } = useContext(AppContext);
   const [isGenerating, setIsGenerating] = useState(false);
   const [newAssumption, setNewAssumption] = useState('');
   const [error, setError] = useState(null);  // Add this line
   const [assumptionType, setAssumptionType] = useState('');
   const apiKey = localStorage.getItem('chatgptApiKey');
   const { getCompletion } = useOpenAI(apiKey);
+  const partner = state.partners.find(p => p.id === state.selectedPartner.id);
   const { queryEmbeddedFiles, generatePrompt } = usePartnerEmbeddedFiles(partner.id, apiKey);
 
   const generateAssumptions = async () => {
@@ -74,15 +77,12 @@ export const PartnerAssumptions = ({ partner, dispatch, onUpdate }) => {
         throw new Error('Generated assumptions are not in the correct format');
       }
 
-      const updatedPartner = {
-        ...partner,
-        assumptions: [...(partner.assumptions || []), ...newAssumptions],
-      };
+
       dispatch({
         type: 'ADD_PARTNER_ASSUMPTIONS',
         payload: { partnerId: partner.id, assumptions: newAssumptions },
       });
-      onUpdate(updatedPartner);
+      
     } catch (error) {
       console.error('Error generating assumptions:', error);
       setError(error.message);  // Set error state
@@ -93,15 +93,11 @@ export const PartnerAssumptions = ({ partner, dispatch, onUpdate }) => {
 
   const addAssumption = () => {
     if (newAssumption.trim()) {
-      const updatedPartner = {
-        ...partner,
-        assumptions: [...(partner.assumptions || []), { assumption: newAssumption.trim() }],
-      };
       dispatch({
         type: 'ADD_PARTNER_ASSUMPTION',
         payload: { partnerId: partner.id, assumption: { assumption: newAssumption.trim() } },
       });
-      onUpdate(updatedPartner);
+      
       setNewAssumption('');
     }
   };
@@ -115,7 +111,7 @@ export const PartnerAssumptions = ({ partner, dispatch, onUpdate }) => {
       type: 'REMOVE_PARTNER_ASSUMPTION',
       payload: { partnerId: partner.id, index },
     });
-    onUpdate(updatedPartner);
+    
   };
 
   return (
