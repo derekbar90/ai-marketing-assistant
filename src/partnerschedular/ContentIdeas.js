@@ -1,11 +1,14 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Button } from '../components/ui/button';
 import { AppContext } from './index';
 import { useContentIdeas } from './hooks/useContentIdeas';
+import { useRefineIdea } from './hooks/useRefineIdea';
 
 export const ContentIdeas = ({ event, selectedTemplate, additionalContext, actualAdditionalContext, onSelectIdea }) => {
   const { dispatch } = useContext(AppContext);
   const { isLoading, contentIdeas, generateIdeas } = useContentIdeas();
+  const { isLoading: isRefining, refinedIdea, refineIdea } = useRefineIdea();
+  const [selectedIdea, setSelectedIdea] = useState(null);
 
   const handleGenerateIdeas = async () => {
     try {
@@ -16,7 +19,20 @@ export const ContentIdeas = ({ event, selectedTemplate, additionalContext, actua
   };
 
   const handleSelectIdea = (idea) => {
+    setSelectedIdea(idea);
     onSelectIdea(idea);
+  };
+
+  const handleRefineIdea = async () => {
+    if (selectedIdea) {
+      try {
+        const refined = await refineIdea(selectedIdea, additionalContext);
+        setSelectedIdea(refined);
+        onSelectIdea(refined);
+      } catch (error) {
+        dispatch({ type: 'SET_ERROR', payload: 'Failed to refine idea. Please try again.' });
+      }
+    }
   };
 
   return (
@@ -28,12 +44,41 @@ export const ContentIdeas = ({ event, selectedTemplate, additionalContext, actua
       >
         {isLoading ? 'Generating Ideas...' : 'Generate Content Ideas'}
       </Button>
+      
+      {selectedIdea && (
+        <div className="mt-4 p-4 border rounded bg-blue-100">
+          <h3 className="text-lg font-bold mb-2">Selected Idea</h3>
+          <h4 className="font-bold text-blue-700">{selectedIdea.title}</h4>
+          <p className="text-sm text-gray-600 mt-1"><strong>Topic:</strong> {selectedIdea.topic}</p>
+          <p className="text-sm text-gray-600"><strong>Template:</strong> {selectedIdea.template}</p>
+          <p className="text-sm text-gray-600"><strong>Relevance:</strong> {(selectedIdea.relevance * 100).toFixed(1)}%</p>
+          <p className="text-sm text-gray-600 mt-2"><strong>Brief:</strong> {selectedIdea.brief}</p>
+          {selectedIdea.additionalSuggestions && (
+            <div className="mt-2">
+              <strong>Additional Suggestions:</strong>
+              <ul className="list-disc list-inside">
+                {selectedIdea.additionalSuggestions.map((suggestion, index) => (
+                  <li key={index} className="text-sm text-gray-600">{suggestion}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <Button 
+            onClick={handleRefineIdea} 
+            className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+            disabled={isRefining}
+          >
+            {isRefining ? 'Refining...' : 'Refine Idea'}
+          </Button>
+        </div>
+      )}
+
       {contentIdeas.length > 0 && (
         <div className="mt-4 p-2 border rounded bg-gray-100">
           <h3 className="text-lg font-bold">Content Ideas</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {contentIdeas
-              .sort((a, b) => b.weight - a.weight)
+              .sort((a, b) => b.relevance - a.relevance)
               .map((idea, index) => (
               <div key={index} className="p-2 border-l-4 border-blue-500 rounded bg-gray-50">
                 <h4 className="font-bold text-blue-700">{idea.title}</h4>

@@ -21,6 +21,8 @@ import { live } from "@electric-sql/pglite/live"
 import { vector } from "@electric-sql/pglite/vector"
 import { PGliteProvider } from "@electric-sql/pglite-react"
 import { ToastProvider } from '../components/ui/toast';
+import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const db = await PGlite.create({
   extensions: { live, vector },
@@ -73,6 +75,7 @@ const runAppMigrations = async () => {
 export const PartnerSchedulingApp = () => {
   const [state, dispatch] = useReducer(appReducer, loadStateFromLocalStorage());
   const [showBulkAdd, setShowBulkAdd] = useState(false);
+  const [isApiKeyMissing, setIsApiKeyMissing] = useState(false);
 
   const handleGenerateSchedule = () => {
     const newSchedule = generateSchedule(state).map(event => ({
@@ -85,7 +88,13 @@ export const PartnerSchedulingApp = () => {
 
   useEffect(() => {
     runAppMigrations();
+    checkApiKey();
   }, []);
+
+  const checkApiKey = () => {
+    const apiKey = localStorage.getItem('chatgptApiKey');
+    setIsApiKeyMissing(!apiKey);
+  };
 
   const handleExport = () => {
     exportToCSV(state.schedule);
@@ -117,6 +126,16 @@ export const PartnerSchedulingApp = () => {
         <AppContext.Provider value={{ state, dispatch }}>
           <div className="p-4 mx-14 mx-auto">
             <h1 className="text-2xl font-bold mb-4">Partner Content Scheduling App</h1>
+
+            {isApiKeyMissing && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Missing API Key</AlertTitle>
+                <AlertDescription>
+                  Please set your OpenAI API key in the API Key Manager to use AI features.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <div className="flex space-x-4">
               <div className="w-1/2">
