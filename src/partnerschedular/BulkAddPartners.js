@@ -30,8 +30,10 @@ export const BulkAddPartners = ({ onClose }) => {
     <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
       <Card className="w-1/2">
         <CardHeader>
+          <div className='flex flex-row justify-between mb-4'>
           <CardTitle>Bulk Add Partners</CardTitle>
-          <Button onClick={onClose} className="absolute top-2 right-2">Close</Button>
+          <Button onClick={onClose}>Close</Button>
+          </div>
         </CardHeader>
         <CardContent>
           <Textarea 

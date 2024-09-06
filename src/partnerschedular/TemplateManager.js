@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/Modal';
+import { AppContext } from './index';
 
-export const TemplateManager = ({ templates, setTemplates, onClose }) => {
+export const TemplateManager = () => {
+  const { state, dispatch } = useContext(AppContext);
+  const { templates, templateManagerOpen } = state;
+
   const [newTemplateTitle, setNewTemplateTitle] = useState('');
   const [newTemplateContent, setNewTemplateContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -10,13 +14,20 @@ export const TemplateManager = ({ templates, setTemplates, onClose }) => {
 
   const handleAddTemplate = () => {
     if (isEditing) {
-      const updatedTemplates = [...templates];
-      updatedTemplates[editIndex] = { title: newTemplateTitle, content: newTemplateContent };
-      setTemplates(updatedTemplates);
+      dispatch({
+        type: 'UPDATE_TEMPLATE',
+        payload: {
+          index: editIndex,
+          template: { title: newTemplateTitle, content: newTemplateContent }
+        }
+      });
       setIsEditing(false);
       setEditIndex(null);
     } else {
-      setTemplates([...templates, { title: newTemplateTitle, content: newTemplateContent }]);
+      dispatch({
+        type: 'ADD_TEMPLATE',
+        payload: { title: newTemplateTitle, content: newTemplateContent }
+      });
     }
     setNewTemplateTitle('');
     setNewTemplateContent('');
@@ -29,9 +40,17 @@ export const TemplateManager = ({ templates, setTemplates, onClose }) => {
     setEditIndex(index);
   };
 
+  const handleClose = () => {
+    dispatch({ type: 'CLOSE_TEMPLATE_MANAGER' });
+  };
+
   return (
-    <Modal isOpen={true} onClose={onClose}>
+    <Modal isOpen={templateManagerOpen} onClose={handleClose}>
+      
+      <div className='flex flex-row justify-between mb-4'>
       <h2 className="text-xl font-bold mb-2">Manage Templates</h2>
+      <Button onClick={handleClose}>Close</Button>
+      </div>
       <input
         type="text"
         value={newTemplateTitle}
