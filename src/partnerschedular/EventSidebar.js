@@ -60,7 +60,7 @@ export const EventSidebar = () => {
 
   const handleSelectIdea = async (idea) => {
     try {
-      const content = await generateContent(selectedEvent, selectedTemplate, contentSize, additionalContext, actualAdditionalContext, idea.title);
+      const content = await generateContent(selectedEvent, idea.template, contentSize, additionalContext, actualAdditionalContext, idea.title);
       dispatch({
         type: 'UPDATE_EVENT_CONTENT',
         payload: {

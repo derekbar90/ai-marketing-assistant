@@ -44,10 +44,16 @@ export const ContentIdeas = ({ event, selectedTemplate, additionalContext, actua
                   <p className="text-xs text-gray-600 ml-1">{idea.topic}</p>
                 </div>
                 <div className="flex items-center mt-1">
+                  <span className="inline-block bg-purple-200 text-purple-800 text-xs px-1 rounded-full uppercase font-semibold tracking-wide">
+                    Template
+                  </span>
+                  <p className="text-xs text-gray-600 ml-1">{idea.template}</p>
+                </div>
+                <div className="flex items-center mt-1">
                   <span className="inline-block bg-green-200 text-green-800 text-xs px-1 rounded-full uppercase font-semibold tracking-wide">
                     Relevance
                   </span>
-                  <p className="text-xs text-gray-600 ml-1">{(idea.weight * 100).toFixed(1)}%</p>
+                  <p className="text-xs text-gray-600 ml-1">{(idea.relevance * 100).toFixed(1)}%</p>
                 </div>
                 <Button 
                   onClick={() => handleSelectIdea(idea)} 
