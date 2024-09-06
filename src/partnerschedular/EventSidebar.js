@@ -8,7 +8,7 @@ import { useEventData } from './hooks/useEventData';
 import { ApiKeyManager } from './ApiKeyManager';
 import { ContentGenerator } from './ContentGenerator';
 import { ContentIdeas } from './ContentIdeas';
-import { TwitterTimeline } from './TwitterTimeline';
+import { TwitterTimeline } from './twitterTimeline';
 import { EventDetails } from './EventDetails';
 import { useContentGenerator } from './hooks/useContentGenerator';
 import ReactMarkdown from 'react-markdown';
