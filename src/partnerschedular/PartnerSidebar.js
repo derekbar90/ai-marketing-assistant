@@ -56,66 +56,26 @@ export const PartnerSidebar = () => {
   const { getCompletion } = useOpenAI(apiKey);
   const [answer, setAnswer] = useState('');
   const [answerLoading, setAnswerLoading] = useState(false);
-
-  useEffect(() => {
-    if (db) {
-      createPartnerFilesTable();
-    }
-  }, [db]);
+  const [documents, setDocuments] = useState([]);
 
   useEffect(() => {
     if (selectedPartner) {
-      fetchFiles();
+      fetchDocuments();
     }
   }, [selectedPartner]);
 
-  const createPartnerFilesTable = async () => {
-    try {
-      console.log('Attempting to create partner_files table...');
-
-      // Create vector extension
-      await db.query(`CREATE EXTENSION IF NOT EXISTS vector;`);
-
-      // Create table
-      await db.query(`
-        CREATE TABLE IF NOT EXISTS partner_files (
-          id SERIAL PRIMARY KEY,
-          partner_id TEXT,
-          filename TEXT,
-          content TEXT,
-          embedding vector(1536),
-          chunk_index INTEGER
-        );
-      `);
-
-      // Create index
-      await db.query(`
-        CREATE INDEX IF NOT EXISTS partner_files_embedding_idx 
-        ON partner_files USING hnsw (embedding vector_ip_ops);
-      `);
-
-      console.log('partner_files table created or already exists');
-    } catch (error) {
-      console.error('Error in createPartnerFilesTable:', error);
-    }
-  };
-
-  const fetchFiles = async () => {
+  const fetchDocuments = async () => {
     if (db && selectedPartner) {
       try {
-        console.log('Fetching files for partner:', selectedPartner.id);
+        console.log('Fetching documents for partner:', selectedPartner.id);
         const result = await db.query(`
-          SELECT id, filename FROM partner_files WHERE partner_id = $1;
+          SELECT id, filename, created_at FROM partner_documents WHERE partner_id = $1
+          ORDER BY created_at DESC;
         `, [selectedPartner.id]);
-        console.log('Fetched files:', result.rows);
-        setFiles(result.rows);
+        console.log('Fetched documents:', result.rows);
+        setDocuments(result.rows);
       } catch (error) {
-        console.error('Error fetching files:', error);
-        if (error.message.includes('relation "partner_files" does not exist')) {
-          console.log('partner_files table does not exist. Attempting to create it...');
-          await createPartnerFilesTable();
-          await fetchFiles();
-        }
+        console.error('Error fetching documents:', error);
       }
     }
   };
@@ -147,15 +107,23 @@ export const PartnerSidebar = () => {
     for (const file of uploadedFiles) {
       if (file.content) {
         try {
+          // Insert document
+          const docResult = await db.query(`
+            INSERT INTO partner_documents (partner_id, filename)
+            VALUES ($1, $2)
+            RETURNING id;
+          `, [selectedPartner.id, file.name]);
+          const documentId = docResult.rows[0].id;
+
           const chunks = splitText(file.content);
           for (let i = 0; i < chunks.length; i++) {
             const embedding = await getEmbedding(chunks[i]);
             if (embedding) {
               const embeddingString = `[${embedding.join(',')}]`;
               await db.query(`
-                INSERT INTO partner_files (partner_id, filename, content, embedding, chunk_index)
-                VALUES ($1, $2, $3, $4::vector, $5);
-              `, [selectedPartner.id, file.name, chunks[i], embeddingString, i]);
+                INSERT INTO partner_chunks (document_id, content, embedding, chunk_index)
+                VALUES ($1, $2, $3::vector, $4);
+              `, [documentId, chunks[i], embeddingString, i]);
             } else {
               throw new Error('Failed to get embedding');
             }
@@ -167,7 +135,7 @@ export const PartnerSidebar = () => {
         }
       }
     }
-    await fetchFiles();
+    await fetchDocuments();
     setUploadedFiles([]);
     setIsUploading(false);
   };
@@ -199,33 +167,43 @@ export const PartnerSidebar = () => {
     multiple: true
   });
 
-  const handleDeleteFile = async (fileId) => {
+  const handleDeleteDocument = async (documentId) => {
     try {
-      await db.query(`DELETE FROM partner_files WHERE id = $1;`, [fileId]);
-      await fetchFiles();
+      await db.query(`DELETE FROM partner_documents WHERE id = $1;`, [documentId]);
+      await fetchDocuments();
     } catch (error) {
-      console.error('Error deleting file:', error);
+      console.error('Error deleting document:', error);
     }
   };
 
-  const handleFileView = async (fileId) => {
+  const handleDocumentView = async (documentId) => {
     try {
-      const result = await db.query(`SELECT content FROM partner_files WHERE id = $1;`, [fileId]);
+      const result = await db.query(`
+        SELECT content FROM partner_chunks 
+        WHERE document_id = $1 
+        ORDER BY chunk_index;
+      `, [documentId]);
       if (result.rows.length > 0) {
+        const fullContent = result.rows.map(row => row.content).join('\n');
         // Open a modal or a new window to display the file content
-        console.log('File content:', result.rows[0].content);
+        console.log('Document content:', fullContent);
       }
     } catch (error) {
-      console.error('Error viewing file:', error);
-      setToast({ show: true, message: 'Error viewing file', type: 'error' });
+      console.error('Error viewing document:', error);
+      setToast({ show: true, message: 'Error viewing document', type: 'error' });
     }
   };
 
-  const handleFileDownload = async (fileId, filename) => {
+  const handleDocumentDownload = async (documentId, filename) => {
     try {
-      const result = await db.query(`SELECT content FROM partner_files WHERE id = $1;`, [fileId]);
+      const result = await db.query(`
+        SELECT content FROM partner_chunks 
+        WHERE document_id = $1 
+        ORDER BY chunk_index;
+      `, [documentId]);
       if (result.rows.length > 0) {
-        const blob = new Blob([result.rows[0].content], { type: 'text/plain' });
+        const fullContent = result.rows.map(row => row.content).join('\n');
+        const blob = new Blob([fullContent], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -234,8 +212,8 @@ export const PartnerSidebar = () => {
         URL.revokeObjectURL(url);
       }
     } catch (error) {
-      console.error('Error downloading file:', error);
-      setToast({ show: true, message: 'Error downloading file', type: 'error' });
+      console.error('Error downloading document:', error);
+      setToast({ show: true, message: 'Error downloading document', type: 'error' });
     }
   };
 
@@ -243,34 +221,6 @@ export const PartnerSidebar = () => {
     const newApiKey = e.target.value;
     setApiKey(newApiKey);
     localStorage.setItem('chatgptApiKey', newApiKey);
-  };
-
-  const handleGenerateEmbedding = async (fileId, filename) => {
-    setEmbeddingStatus(prev => ({ ...prev, [fileId]: 'loading' }));
-    try {
-      const result = await db.query(`SELECT content FROM partner_files WHERE id = $1;`, [fileId]);
-      if (result.rows.length > 0) {
-        const content = result.rows[0].content;
-        const embedding = await getEmbedding(content);
-        if (embedding) {
-          // Convert the embedding array to a PostgreSQL array literal
-          const embeddingString = `{${embedding.join(',')}}`;
-          await db.query(`
-            UPDATE partner_files 
-            SET embedding = $1::vector 
-            WHERE id = $2;
-          `, [embeddingString, fileId]);
-          setEmbeddingStatus(prev => ({ ...prev, [fileId]: 'success' }));
-          setToast({ show: true, message: `Embedding generated for ${filename}`, type: 'success' });
-        } else {
-          throw new Error('Failed to generate embedding');
-        }
-      }
-    } catch (error) {
-      console.error('Error generating embedding:', error);
-      setEmbeddingStatus(prev => ({ ...prev, [fileId]: 'error' }));
-      setToast({ show: true, message: `Error generating embedding for ${filename}`, type: 'error' });
-    }
   };
 
   const handleQuerySubmit = async (e) => {
@@ -399,26 +349,26 @@ export const PartnerSidebar = () => {
             )}
           </div>
           
-          {/* Partner Files Section */}
+          {/* Partner Documents Section */}
           <div className="bg-gray-100 p-4 rounded-lg mb-4">
-            <h3 className="font-bold mb-2">Partner Files:</h3>
-            {files.length === 0 ? (
-              <p className="text-gray-500">No files uploaded yet.</p>
+            <h3 className="font-bold mb-2">Partner Documents:</h3>
+            {documents.length === 0 ? (
+              <p className="text-gray-500">No documents uploaded yet.</p>
             ) : (
-              files.map((file) => (
-                <div key={file.id} className="flex items-center justify-between mb-2 bg-white p-2 rounded-md">
+              documents.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between mb-2 bg-white p-2 rounded-md">
                   <div className="flex items-center">
                     <File className="mr-2" size={16} />
-                    <span className="truncate max-w-[150px]">{file.filename}</span>
+                    <span className="truncate max-w-[150px]">{doc.filename}</span>
                   </div>
                   <div>
-                    <Button onClick={() => handleFileView(file.id)} variant="ghost" size="sm" className="mr-1">
+                    <Button onClick={() => handleDocumentView(doc.id)} variant="ghost" size="sm" className="mr-1">
                       <Eye size={16} />
                     </Button>
-                    <Button onClick={() => handleFileDownload(file.id, file.filename)} variant="ghost" size="sm" className="mr-1">
+                    <Button onClick={() => handleDocumentDownload(doc.id, doc.filename)} variant="ghost" size="sm" className="mr-1">
                       <Download size={16} />
                     </Button>
-                    <Button onClick={() => handleDeleteFile(file.id)} variant="destructive" size="sm">
+                    <Button onClick={() => handleDeleteDocument(doc.id)} variant="destructive" size="sm">
                       <Trash2 size={16} />
                     </Button>
                   </div>

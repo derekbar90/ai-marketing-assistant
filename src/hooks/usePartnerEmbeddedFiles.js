@@ -18,10 +18,11 @@ export const usePartnerEmbeddedFiles = (partnerId, apiKey) => {
 
       const embeddingString = `[${embedding.join(',')}]`;
       const result = await db.query(`
-        SELECT id, filename, content, 
-               (embedding <=> $1::vector) as distance
-        FROM partner_files
-        WHERE partner_id = $2
+        SELECT pc.id, pd.filename, pc.content, 
+               (pc.embedding <=> $1::vector) as distance
+        FROM partner_chunks pc
+        JOIN partner_documents pd ON pc.document_id = pd.id
+        WHERE pd.partner_id = $2
         ORDER BY distance ASC
         LIMIT $3;
       `, [embeddingString, partnerId, limit]);

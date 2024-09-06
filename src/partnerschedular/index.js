@@ -1,4 +1,4 @@
-import React, { useReducer, createContext, useState } from 'react';
+import React, { useReducer, createContext, useState, useEffect } from 'react';
 import { usePGlite } from "@electric-sql/pglite-react";
 import { PartnerList } from './PartnerList';
 import { ScheduleGenerator } from './ScheduleGenerator';
@@ -28,6 +28,45 @@ const db = await PGlite.create({
 
 export const AppContext = createContext();
 
+const runAppMigrations = async () => {
+  try {
+    console.log('Running app migrations...');
+
+    // Create vector extension
+    await db.query(`CREATE EXTENSION IF NOT EXISTS vector;`);
+
+    // Create documents table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS partner_documents (
+        id SERIAL PRIMARY KEY,
+        partner_id TEXT,
+        filename TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS partner_chunks (
+        id SERIAL PRIMARY KEY,
+        document_id INTEGER REFERENCES partner_documents(id) ON DELETE CASCADE,
+        content TEXT,
+        embedding vector(1536),
+        chunk_index INTEGER
+      );
+    `);
+
+    // Create index
+    await db.query(`
+      CREATE INDEX IF NOT EXISTS partner_chunks_embedding_idx 
+      ON partner_chunks USING hnsw (embedding vector_ip_ops);
+    `);
+
+    console.log('App migrations completed successfully');
+  } catch (error) {
+    console.error('Error in runAppMigrations:', error);
+  }
+};
+
 export const PartnerSchedulingApp = () => {
   const [state, dispatch] = useReducer(appReducer, loadStateFromLocalStorage());
   const [showBulkAdd, setShowBulkAdd] = useState(false);
@@ -40,6 +79,10 @@ export const PartnerSchedulingApp = () => {
     const resolvedSchedule = resolveConflicts(newSchedule);
     dispatch({ type: 'SET_SCHEDULE', payload: resolvedSchedule });
   };
+
+  useEffect(() => {
+    runAppMigrations();
+  }, []);
 
   const handleExport = () => {
     exportToCSV(state.schedule);
