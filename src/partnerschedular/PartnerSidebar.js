@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useEffect, useContext } from 'react';
+import React, { useState, useCallback, useEffect, useContext, useRef } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Slider } from '../components/ui/slider';
 import { SketchPicker } from 'react-color';
-import { Trash2, ChevronRight, ChevronLeft, Upload, File, Eye, Download } from 'lucide-react';
+import { Trash2, ChevronRight, ChevronLeft, Upload, File, Eye, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import { usePGlite } from '@electric-sql/pglite-react';
 import { useDropzone } from 'react-dropzone';
 import { Toast } from '../components/ui/toast';
@@ -14,6 +14,8 @@ import { PartnerAssumptions } from './PartnerAssumptions';
 import { AppContext } from './index';
 import ReactMarkdown from 'react-markdown';
 import { Progress } from '../components/ui/progress';
+import { Textarea } from '../components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 
 export function splitText(text, chunkSize = 1000, chunkOverlap = 200) {
   const chunks = [];
@@ -58,12 +60,41 @@ export const PartnerSidebar = () => {
   const [documents, setDocuments] = useState([]);
   const [fileProgress, setFileProgress] = useState({});
   const [results, setResults] = useState([]);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualTitle, setManualTitle] = useState('');
+  const [manualContent, setManualContent] = useState('');
+  const [showTwitterTimeline, setShowTwitterTimeline] = useState(false);
+  const twitterTimelineRef = useRef(null);
 
   useEffect(() => {
     if (selectedPartner) {
       fetchDocuments();
     }
   }, [selectedPartner]);
+
+  useEffect(() => {
+    if (showTwitterTimeline && selectedPartner?.twitter) {
+      // Remove existing script if any
+      const existingScript = document.getElementById('twitter-widget-script');
+      if (existingScript) {
+        existingScript.remove();
+      }
+
+      // Create and append new script
+      const script = document.createElement('script');
+      script.id = 'twitter-widget-script';
+      script.src = "https://platform.twitter.com/widgets.js";
+      script.async = true;
+      script.charset = "utf-8";
+      document.body.appendChild(script);
+
+      script.onload = () => {
+        if (window.twttr && twitterTimelineRef.current) {
+          window.twttr.widgets.load(twitterTimelineRef.current);
+        }
+      };
+    }
+  }, [showTwitterTimeline, selectedPartner?.twitter]);
 
   const fetchDocuments = async () => {
     if (db && selectedPartner) {
@@ -258,6 +289,64 @@ export const PartnerSidebar = () => {
     dispatch({ type: 'UPDATE_PARTNER', payload: updatedPartner });
   };
 
+  const handleManualFileSubmit = async (e) => {
+    e.preventDefault();
+    if (!manualTitle.trim() || !manualContent.trim()) {
+      setToast({ show: true, message: 'Please provide both title and content', type: 'error' });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      setFileProgress(prev => ({ ...prev, [manualTitle]: { status: 'processing', progress: 0 } }));
+      
+      // Insert document
+      const docResult = await db.query(`
+        INSERT INTO partner_documents (partner_id, filename)
+        VALUES ($1, $2)
+        RETURNING id;
+      `, [selectedPartner.id, manualTitle]);
+      const documentId = docResult.rows[0].id;
+
+      const chunks = splitText(manualContent);
+      for (let i = 0; i < chunks.length; i++) {
+        const embedding = await getEmbedding(chunks[i]);
+        if (embedding) {
+          const embeddingString = `[${embedding.join(',')}]`;
+          await db.query(`
+            INSERT INTO partner_chunks (document_id, content, embedding, chunk_index)
+            VALUES ($1, $2, $3::vector, $4);
+          `, [documentId, chunks[i], embeddingString, i]);
+          
+          // Update progress
+          const progress = Math.round(((i + 1) / chunks.length) * 100);
+          setFileProgress(prev => ({ 
+            ...prev, 
+            [manualTitle]: { status: 'processing', progress } 
+          }));
+        } else {
+          throw new Error('Failed to get embedding');
+        }
+      }
+      setFileProgress(prev => ({ ...prev, [manualTitle]: { status: 'done', progress: 100 } }));
+      setToast({ show: true, message: `Successfully added ${manualTitle}`, type: 'success' });
+      setShowManualInput(false);
+      setManualTitle('');
+      setManualContent('');
+      await fetchDocuments();
+    } catch (error) {
+      console.error('Error adding manual file:', error);
+      setFileProgress(prev => ({ ...prev, [manualTitle]: { status: 'error', progress: 0 } }));
+      setToast({ show: true, message: `Error adding ${manualTitle}: ${error.message}`, type: 'error' });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const toggleTwitterTimeline = () => {
+    setShowTwitterTimeline(!showTwitterTimeline);
+  };
+
   if (!partnerSidebarOpen) return null;
 
   return (
@@ -370,6 +459,34 @@ export const PartnerSidebar = () => {
                 </Button>
               </div>
             )}
+            
+            {/* Manual File Input Dialog */}
+            <Dialog open={showManualInput} onOpenChange={setShowManualInput}>
+              <DialogTrigger asChild>
+                <Button className="mt-2 w-full">Add File Manually</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add File Manually</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleManualFileSubmit} className="space-y-4">
+                  <Input
+                    value={manualTitle}
+                    onChange={(e) => setManualTitle(e.target.value)}
+                    placeholder="Enter file title"
+                  />
+                  <Textarea
+                    value={manualContent}
+                    onChange={(e) => setManualContent(e.target.value)}
+                    placeholder="Enter file content"
+                    rows={10}
+                  />
+                  <Button type="submit" disabled={isUploading}>
+                    {isUploading ? 'Adding...' : 'Add File'}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
           
           {/* Partner Documents Section */}
@@ -449,7 +566,7 @@ export const PartnerSidebar = () => {
           />
           
           {/* Action Buttons */}
-          <div className="flex justify-between">
+          <div className="flex justify-between mb-4">
             <Button onClick={handleUpdatePartner} className="flex-grow mr-2">
               Update Partner
             </Button>
@@ -457,6 +574,32 @@ export const PartnerSidebar = () => {
               <Trash2 className="mr-2" /> Remove Partner
             </Button>
           </div>
+
+          {/* Twitter Timeline Toggle */}
+          {selectedPartner.twitter && (
+            <div className="bg-gray-100 p-4 rounded-lg mb-4">
+              <Button 
+                onClick={toggleTwitterTimeline} 
+                className="w-full flex justify-between items-center"
+                variant="outline"
+              >
+                <span>Twitter Timeline</span>
+                {showTwitterTimeline ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              </Button>
+              
+              {showTwitterTimeline && (
+                <div ref={twitterTimelineRef} className="mt-4 h-full overflow-y-auto">
+                  <a 
+                    className="twitter-timeline" 
+                    href={`https://twitter.com/${selectedPartner.twitter}`}
+                    data-height="250"
+                  >
+                    Tweets by {selectedPartner.twitter}
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
       

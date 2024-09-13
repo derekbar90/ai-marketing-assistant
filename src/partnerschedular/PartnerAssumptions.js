@@ -10,16 +10,22 @@ export const PartnerAssumptions = ({}) => {
   const { state, dispatch } = useContext(AppContext);
   const [isGenerating, setIsGenerating] = useState(false);
   const [newAssumption, setNewAssumption] = useState('');
-  const [error, setError] = useState(null);  // Add this line
+  const [error, setError] = useState(null);
   const [assumptionType, setAssumptionType] = useState('');
   const apiKey = localStorage.getItem('chatgptApiKey');
   const { getCompletion } = useOpenAI(apiKey);
-  const partner = state.partners.find(p => p.id === state.selectedPartner.id);
-  const { queryEmbeddedFiles, generatePrompt } = usePartnerEmbeddedFiles(partner.id, apiKey);
+  const selectedPartner = state.selectedEvent?.partner || state.selectedPartner;
+  const partner = selectedPartner ? state.partners.find(p => p.id === selectedPartner.id) : null;
+  const { queryEmbeddedFiles, generatePrompt } = usePartnerEmbeddedFiles(partner?.id, apiKey);
 
   const generateAssumptions = async () => {
+    if (!partner) {
+      setError('No partner selected');
+      return;
+    }
+
     setIsGenerating(true);
-    setError(null);  // Reset error state
+    setError(null);
     try {
       const query = `Generate a list of assumptions about the partner focusing on ${assumptionType || 'general aspects'}`;
       const results = await queryEmbeddedFiles(query);
@@ -85,7 +91,7 @@ export const PartnerAssumptions = ({}) => {
       
     } catch (error) {
       console.error('Error generating assumptions:', error);
-      setError(error.message);  // Set error state
+      setError(error.message);
     } finally {
       setIsGenerating(false);
     }
@@ -113,6 +119,15 @@ export const PartnerAssumptions = ({}) => {
     });
     
   };
+
+  if (!partner) {
+    return (
+      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+        <h3 className="text-xl font-semibold mb-4">Partner Assumptions</h3>
+        <p>Please select a partner to view and manage assumptions.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mb-6">
