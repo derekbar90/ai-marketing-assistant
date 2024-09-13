@@ -91,7 +91,14 @@ export const EventSidebar = () => {
     }
   };
 
-  const currentEvent = state.schedule.find(e => e.id === selectedEvent.id) || selectedEvent;
+  
+  let currentEvent;
+  try {
+    currentEvent = state.schedule.find(e => e.id === selectedEvent.id) || selectedEvent;
+  } catch (error) {
+    debugger;
+    console.error('Error finding current event:', error);
+  }
 
   const handleEditPartner = () => {
     dispatch({ type: 'OPEN_PARTNER_SIDEBAR', payload: selectedEvent.partner });
@@ -135,7 +142,7 @@ export const EventSidebar = () => {
             <div className="flex flex-row space-x-4">
                 
               <div className="w-1/2">
-              <PartnerAssumptions partner={selectedEvent.partner} dispatch={dispatch} />
+                <PartnerAssumptions partner={selectedEvent.partner} dispatch={dispatch} />
               </div>
               <div className="w-1/2">
                 <TwitterTimeline twitterHandle={selectedEvent.partner.twitter} />

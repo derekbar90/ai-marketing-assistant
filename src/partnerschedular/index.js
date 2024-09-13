@@ -164,9 +164,6 @@ export const PartnerSchedulingApp = () => {
             )}
             {state.partnerSidebarOpen && (
               <PartnerSidebar
-                isOpen={state.partnerSidebarOpen}
-                selectedPartner={state.selectedPartner}
-                dispatch={dispatch}
               />
             )}
             {state.templateManagerOpen && (
