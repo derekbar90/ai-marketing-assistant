@@ -65,6 +65,7 @@ export const PartnerSidebar = () => {
   const [manualContent, setManualContent] = useState('');
   const [showTwitterTimeline, setShowTwitterTimeline] = useState(false);
   const twitterTimelineRef = useRef(null);
+  const [isTitleGenerating, setIsTitleGenerating] = useState(false);
 
   useEffect(() => {
     if (selectedPartner) {
@@ -347,6 +348,29 @@ export const PartnerSidebar = () => {
     setShowTwitterTimeline(!showTwitterTimeline);
   };
 
+  const handleGenerateTitle = async () => {
+    if (!manualContent.trim()) {
+      setToast({ show: true, message: 'Please provide content to generate a title', type: 'error' });
+      return;
+    }
+
+    setIsTitleGenerating(true);
+    try {
+      const prompt = `Generate a concise and descriptive title for a document for the following content, Add any significant dates in the title to tag it to a range or specific day. There is a possibility the content is a pasted group of tweets, in this case: determine the date range and label "$partner tweets from $start - $end:\n\n${manualContent}... IMPORTANT: The response should be a single string, no formatting or markdown, just a plain title. Be concise.`;
+      const generatedTitle = await getCompletion(prompt);
+      if (generatedTitle) {
+        setManualTitle(generatedTitle.trim());
+      } else {
+        throw new Error('Failed to generate title');
+      }
+    } catch (error) {
+      console.error('Error generating title:', error);
+      setToast({ show: true, message: 'Error generating title', type: 'error' });
+    } finally {
+      setIsTitleGenerating(false);
+    }
+  };
+
   if (!partnerSidebarOpen) return null;
 
   return (
@@ -470,11 +494,21 @@ export const PartnerSidebar = () => {
                   <DialogTitle>Add File Manually</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleManualFileSubmit} className="space-y-4">
-                  <Input
-                    value={manualTitle}
-                    onChange={(e) => setManualTitle(e.target.value)}
-                    placeholder="Enter file title"
-                  />
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      value={manualTitle}
+                      onChange={(e) => setManualTitle(e.target.value)}
+                      placeholder="Enter file title"
+                      className="flex-grow"
+                    />
+                    <Button 
+                      type="button" 
+                      onClick={handleGenerateTitle} 
+                      disabled={isTitleGenerating || !manualContent.trim()}
+                    >
+                      {isTitleGenerating ? 'Generating...' : 'Generate Title'}
+                    </Button>
+                  </div>
                   <Textarea
                     value={manualContent}
                     onChange={(e) => setManualContent(e.target.value)}
