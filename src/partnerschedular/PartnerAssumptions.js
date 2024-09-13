@@ -9,9 +9,11 @@ import { AppContext } from './index';
 export const PartnerAssumptions = ({}) => {
   const { state, dispatch } = useContext(AppContext);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
   const [newAssumption, setNewAssumption] = useState('');
   const [error, setError] = useState(null);
   const [assumptionType, setAssumptionType] = useState('');
+  const [previousAssumptions, setPreviousAssumptions] = useState(null);
   const apiKey = localStorage.getItem('chatgptApiKey');
   const { getCompletion } = useOpenAI(apiKey);
   const selectedPartner = state.selectedEvent?.partner || state.selectedPartner;
@@ -94,6 +96,86 @@ export const PartnerAssumptions = ({}) => {
       setError(error.message);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const refineAssumptions = async () => {
+    if (!partner || !partner.assumptions || partner.assumptions.length === 0) {
+      setError('No assumptions to refine');
+      return;
+    }
+
+    setIsRefining(true);
+    setError(null);
+    try {
+      // Store the current assumptions before refining
+      setPreviousAssumptions(partner.assumptions);
+
+      const client = createOpenAIInstance();
+
+      const systemPrompt = `You are an AI assistant specialized in refining and improving assumptions about business partners. Your task is to:
+
+      1. Review the current list of assumptions about the partner.
+      2. Refine and improve these assumptions, making them more specific, actionable, or insightful.
+      3. Ensure each refined assumption is no more than 15 words long.
+      4. You may combine, split, or completely rewrite assumptions if it improves their quality.
+      5. Aim to provide a set of 5-7 high-quality, diverse assumptions.
+      
+      Return the refined assumptions as a JSON array of objects with the following structure:
+      { 
+        "assumptions": [
+          { "assumption": "string" },
+          ...
+        ] 
+      }`;
+      
+      const userPrompt = `Partner: ${partner.name}
+      
+      Current Assumptions:
+      ${partner.assumptions.map(a => a.assumption).join('\n')}
+      
+      Please refine and improve these assumptions about the partner.`;
+
+      const response = await client.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+        response_format: { type: "json_object" }
+      });
+
+      const responseContent = response.choices[0].message.content;
+      const parsedResponse = JSON.parse(responseContent);
+      const refinedAssumptions = parsedResponse.assumptions;
+
+      if (!Array.isArray(refinedAssumptions)) {
+        throw new Error('Refined assumptions are not in the correct format');
+      }
+
+      dispatch({
+        type: 'UPDATE_PARTNER_ASSUMPTIONS',
+        payload: { partnerId: partner.id, assumptions: refinedAssumptions },
+      });
+      
+    } catch (error) {
+      console.error('Error refining assumptions:', error);
+      setError(error.message);
+      setPreviousAssumptions(null);
+    } finally {
+      setIsRefining(false);
+    }
+  };
+
+  const undoRefinement = () => {
+    if (previousAssumptions) {
+      dispatch({
+        type: 'UPDATE_PARTNER_ASSUMPTIONS',
+        payload: { partnerId: partner.id, assumptions: previousAssumptions },
+      });
+      setPreviousAssumptions(null);
     }
   };
 
@@ -181,6 +263,27 @@ export const PartnerAssumptions = ({}) => {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+      
+      {partner.assumptions && partner.assumptions.length > 0 && (
+        <div className="mt-4 space-y-2">
+          <Button 
+            onClick={refineAssumptions} 
+            disabled={isRefining}
+            className="w-full"
+          >
+            {isRefining ? 'Refining...' : 'Refine Assumptions'}
+          </Button>
+          {previousAssumptions && (
+            <Button 
+              onClick={undoRefinement}
+              className="w-full"
+              variant="outline"
+            >
+              Undo Refinement
+            </Button>
+          )}
         </div>
       )}
     </div>

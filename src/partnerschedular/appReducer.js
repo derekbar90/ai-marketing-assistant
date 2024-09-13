@@ -255,6 +255,17 @@ export const appReducer = (state, action) => {
       console.log('State after removing partner assumption:', stateAfterRemove);
       return stateAfterRemove;
 
+    case 'UPDATE_PARTNER_ASSUMPTIONS':
+      console.log('Updating partner assumptions. Payload:', action.payload);
+      return {
+        ...state,
+        partners: state.partners.map(partner =>
+          partner.id === action.payload.partnerId
+            ? { ...partner, assumptions: action.payload.assumptions }
+            : partner
+        ),
+      };
+
     case 'OPEN_EVENT_SIDEBAR':
       return {
         ...state,
