@@ -14,6 +14,7 @@ import { exportToCSV } from './exportUtils';
 import { Button } from './../components/ui/button';
 import { generateUniqueId } from '../utils/eventUtils';
 import { ApiKeyManager } from './ApiKeyManager';
+import { Settings } from './Settings'; // Import the Settings component
 import OpenAI from 'openai';
 
 import { PGlite } from "@electric-sql/pglite"
@@ -76,6 +77,7 @@ export const PartnerSchedulingApp = () => {
   const [state, dispatch] = useReducer(appReducer, loadStateFromLocalStorage());
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [isApiKeyMissing, setIsApiKeyMissing] = useState(false);
+  const [showSettings, setShowSettings] = useState(false); // Add this line
 
   const handleGenerateSchedule = () => {
     const newSchedule = generateSchedule(state).map(event => ({
@@ -120,6 +122,14 @@ export const PartnerSchedulingApp = () => {
     dispatch({ type: 'OPEN_TEMPLATE_MANAGER' });
   };
 
+  const handleOpenSettings = () => {
+    setShowSettings(true);
+  };
+
+  const handleCloseSettings = () => {
+    setShowSettings(false);
+  };
+
   return (
     <ToastProvider>
       <PGliteProvider db={db}>
@@ -152,12 +162,26 @@ export const PartnerSchedulingApp = () => {
                   <Button onClick={handleOpenTemplateManager}>
                     Manage Templates
                   </Button>
-                  <ApiKeyManager />
+                  <Button onClick={handleOpenSettings}>
+                    Settings
+                  </Button>
                 </div>
                 <ScheduleGenerator onGenerate={handleGenerateSchedule} />
                 <CalendarView onEventClick={handleEventClick} />
               </div>
             </div>
+
+            {showSettings && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <div className="bg-white p-4 rounded-lg">
+                  <h2 className="text-xl font-bold mb-4">Settings</h2>
+                  <Settings />
+                  <Button onClick={handleCloseSettings} className="mt-4">
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {state.eventSidebarOpen && (
               <EventSidebar event={state.selectedEvent} onClose={handleCloseSidebar} />
