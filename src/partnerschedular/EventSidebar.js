@@ -10,6 +10,8 @@ import { TwitterTimeline } from './twitterTimeline';
 import { useContentGenerator } from './hooks/useContentGenerator';
 import ReactMarkdown from 'react-markdown';
 import { PartnerAssumptions } from './PartnerAssumptions';
+import { useTypefullyDrafts } from '../hooks/useTypefullyDrafts';
+
 const EventDetailItem = ({ label, value }) => (
   <div>
     <p className="text-sm text-gray-600">{label}</p>
@@ -35,13 +37,23 @@ export const EventSidebar = () => {
 
   const { isApproved, setIsApproved } = useEventData(selectedEvent);
   const { generateContent, isLoading } = useContentGenerator();
+  const { addDraft, isLoading: isTypefullyLoading, error: typefullyError } = useTypefullyDrafts();
 
   const handleOpenTemplateManager = () => setIsTemplateManagerOpen(true);
   const handleCloseTemplateManager = () => setIsTemplateManagerOpen(false);
 
-  const handleApproveContent = () => {
-    dispatch({ type: 'APPROVE_EVENT_CONTENT', payload: { id: selectedEvent.id } });
-    setIsApproved(true);
+  const handleApproveContent = async () => {
+    if (currentEvent.generatedContent) {
+      const result = await addDraft(currentEvent.generatedContent);
+      if (result) {
+        dispatch({ type: 'APPROVE_EVENT_CONTENT', payload: { id: selectedEvent.id } });
+        setIsApproved(true);
+        // You can add a success notification here
+      } else {
+        // Handle error, maybe show an error notification
+        console.error('Failed to add draft to Typefully:', typefullyError);
+      }
+    }
   };
 
   const contentSizeOptions = [
@@ -91,7 +103,6 @@ export const EventSidebar = () => {
     }
   };
 
-  
   let currentEvent;
   try {
     currentEvent = state.schedule.find(e => e.id === selectedEvent.id) || selectedEvent;
@@ -202,9 +213,9 @@ export const EventSidebar = () => {
           <Button
             onClick={handleApproveContent}
             className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
-            disabled={!isApproved && !currentEvent.generatedContent}
+            disabled={isApproved || !currentEvent.generatedContent || isTypefullyLoading}
           >
-            {(!isApproved && !currentEvent.generatedContent) ? 'Approved' : 'Approve Content'}
+            {isTypefullyLoading ? 'Adding to Typefully...' : (isApproved ? 'Approved' : 'Approve Content')}
           </Button>
 
           <Button onClick={handleOpenTemplateManager} className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full">
