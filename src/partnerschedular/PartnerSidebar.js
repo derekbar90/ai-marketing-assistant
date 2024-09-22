@@ -68,10 +68,12 @@ export const PartnerSidebar = () => {
   const twitterTimelineRef = useRef(null);
   const [isTitleGenerating, setIsTitleGenerating] = useState(false);
   const [rawTweets, setRawTweets] = useState('');
+  const [latestTweets, setLatestTweets] = useState([]);
 
   useEffect(() => {
     if (selectedPartner) {
       fetchDocuments();
+      fetchLatestTweets();
     }
   }, [selectedPartner]);
 
@@ -113,6 +115,34 @@ export const PartnerSidebar = () => {
         console.error('Error fetching documents:', error);
       }
     }
+  };
+
+  const fetchLatestTweets = async () => {
+    if (db && selectedPartner) {
+      try {
+        const result = await db.query(`
+          SELECT date, content FROM partner_tweets
+          WHERE partner_id = $1
+          ORDER BY date DESC
+          LIMIT 100;
+        `, [selectedPartner.id]);
+        setLatestTweets(result.rows);
+      } catch (error) {
+        console.error('Error fetching latest tweets:', error);
+        setToast({ show: true, message: 'Error fetching latest tweets', type: 'error' });
+      }
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   const handleUpdatePartner = async () => {
@@ -685,6 +715,25 @@ export const PartnerSidebar = () => {
             <Button onClick={handleSubmitTweets} disabled={!rawTweets.trim()}>
               Add Tweets
             </Button>
+          </div>
+
+          {/* Latest Tweets Section */}
+          <div className="bg-gray-100 p-4 rounded-lg mb-4">
+            <h3 className="font-bold mb-2">Latest Tweets</h3>
+            <div className="h-64 overflow-y-auto bg-white rounded-md p-2">
+              {latestTweets.length === 0 ? (
+                <p className="text-gray-500">No tweets available.</p>
+              ) : (
+                latestTweets.map((tweet, index) => (
+                  <div key={index} className="mb-4 pb-2 border-b border-gray-200 last:border-b-0">
+                    <p className="text-sm text-gray-600 mb-1">
+                      {formatDate(tweet.date)}
+                    </p>
+                    <p className="text-sm">{tweet.content}</p>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}
