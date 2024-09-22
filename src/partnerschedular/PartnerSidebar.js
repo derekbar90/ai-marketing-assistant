@@ -16,6 +16,7 @@ import ReactMarkdown from 'react-markdown';
 import { Progress } from '../components/ui/progress';
 import { Textarea } from '../components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { parseTweets } from '../utils/twitterParser'; // Ensure parseTweets is imported
 
 export function splitText(text, chunkSize = 1000, chunkOverlap = 200) {
   const chunks = [];
@@ -66,6 +67,7 @@ export const PartnerSidebar = () => {
   const [showTwitterTimeline, setShowTwitterTimeline] = useState(false);
   const twitterTimelineRef = useRef(null);
   const [isTitleGenerating, setIsTitleGenerating] = useState(false);
+  const [rawTweets, setRawTweets] = useState('');
 
   useEffect(() => {
     if (selectedPartner) {
@@ -371,6 +373,41 @@ export const PartnerSidebar = () => {
     }
   };
 
+  const handleSubmitTweets = async () => {
+    if (!rawTweets.trim()) {
+      setToast({ show: true, message: 'Please enter raw tweets', type: 'error' });
+      return;
+    }
+
+    if (!selectedPartner) {
+      setToast({ show: true, message: 'No partner selected', type: 'error' });
+      return;
+    }
+
+    try {
+      const parsed = parseTweets(rawTweets);
+      const { tweets } = parsed;
+
+      for (const tweet of tweets) {
+        try {
+          await db.query(`
+            INSERT INTO partner_tweets (partner_id, date, content)
+            VALUES ($1, $2, $3);
+          `, [selectedPartner.id, tweet.date, tweet.content]);
+        } catch (error) {
+          console.error('Error adding tweet:', error);
+          setToast({ show: true, message: 'Error adding tweet', type: 'error' }); 
+        }
+      }
+
+      setToast({ show: true, message: 'Tweets successfully added', type: 'success' });
+      setRawTweets('');
+    } catch (error) {
+      console.error('Error adding tweets:', error);
+      setToast({ show: true, message: 'Error adding tweets', type: 'error' });
+    }
+  };
+
   if (!partnerSidebarOpen) return null;
 
   return (
@@ -634,6 +671,21 @@ export const PartnerSidebar = () => {
               )}
             </div>
           )}
+
+          {/* Add Raw Tweets Section */}
+          <div className="bg-gray-100 p-4 rounded-lg mb-4">
+            <h3 className="font-bold mb-2">Add Raw Tweets</h3>
+            <Textarea
+              value={rawTweets}
+              onChange={(e) => setRawTweets(e.target.value)}
+              placeholder="Enter raw tweets here..."
+              rows={6}
+              className="mb-2"
+            />
+            <Button onClick={handleSubmitTweets} disabled={!rawTweets.trim()}>
+              Add Tweets
+            </Button>
+          </div>
         </div>
       )}
       
