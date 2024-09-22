@@ -752,7 +752,7 @@ export const PartnerSidebar = () => {
 
           {/* Latest Tweets Section */}
           <div className="bg-gray-100 p-4 rounded-lg mb-4">
-            <h3 className="font-bold mb-2">Latest Tweets</h3>
+            <h3 className="font-bold mb-2">Latest Tweets ({latestTweets.length})</h3>
             <div className="h-64 overflow-y-auto bg-white rounded-md p-2">
               {latestTweets.length === 0 ? (
                 <p className="text-gray-500">No tweets available.</p>
