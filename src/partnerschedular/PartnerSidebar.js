@@ -733,7 +733,7 @@ export const PartnerSidebar = () => {
               value={rawTweets}
               onChange={(e) => setRawTweets(e.target.value)}
               placeholder="Enter raw tweets here..."
-              rows={6}
+              rows={1}
               className="mb-2"
             />
             <Button onClick={handleSubmitTweets} disabled={!rawTweets.trim() || tweetUploadProgress > 0}>
