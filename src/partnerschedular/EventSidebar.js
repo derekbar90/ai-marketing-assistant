@@ -11,6 +11,7 @@ import { useContentGenerator } from './hooks/useContentGenerator';
 import ReactMarkdown from 'react-markdown';
 import { PartnerAssumptions } from './PartnerAssumptions';
 import { useTypefullyDrafts } from '../hooks/useTypefullyDrafts';
+import { usePartnerTweets } from '../hooks/usePartnerTweets';
 
 const EventDetailItem = ({ label, value }) => (
   <div>
@@ -38,6 +39,8 @@ export const EventSidebar = () => {
   const { isApproved, setIsApproved } = useEventData(selectedEvent);
   const { generateContent, isLoading } = useContentGenerator();
   const { addDraft, isLoading: isTypefullyLoading, error: typefullyError } = useTypefullyDrafts();
+
+  const { tweets, loading: tweetsLoading, error: tweetsError } = usePartnerTweets(selectedEvent.partner.id, 5);
 
   const handleOpenTemplateManager = () => setIsTemplateManagerOpen(true);
   const handleCloseTemplateManager = () => setIsTemplateManagerOpen(false);
@@ -156,7 +159,21 @@ export const EventSidebar = () => {
                 <PartnerAssumptions partner={selectedEvent.partner} dispatch={dispatch} />
               </div>
               <div className="w-1/2">
-                <TwitterTimeline twitterHandle={selectedEvent.partner.twitter} />
+                {tweetsLoading ? (
+                  <p>Loading tweets...</p>
+                ) : tweetsError ? (
+                  <p>Error loading tweets: {tweetsError}</p>
+                ) : (
+                  <div>
+                    <h3><b>Latest Stored Tweets</b></h3>
+                    {tweets.map((tweet) => (
+                      <div key={tweet.id} className="mb-2 p-2 border rounded">
+                        <p>{tweet.text}</p>
+                        <small>{new Date(tweet.created_at).toLocaleString()}</small>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <textarea
                   value={additionalContext}
                   onChange={(e) => setAdditionalContext(e.target.value)}
