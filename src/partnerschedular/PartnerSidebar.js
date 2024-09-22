@@ -721,34 +721,33 @@ export const PartnerSidebar = () => {
                   >
                     Tweets by {selectedPartner.twitter}
                   </a>
+                   {/* Add Raw Tweets Section */}
+          <div className="bg-gray-100 p-4 rounded-lg mb-4">
+          <h3 className="font-bold mb-2">Add Raw Tweets</h3>
+          <Textarea
+            value={rawTweets}
+            onChange={(e) => setRawTweets(e.target.value)}
+            placeholder="Enter raw tweets here..."
+            rows={1}
+            className="mb-2"
+          />
+          <Button onClick={handleSubmitTweets} disabled={!rawTweets.trim() || tweetUploadProgress > 0}>
+            {tweetUploadProgress > 0 ? 'Uploading...' : 'Add Tweets'}
+          </Button>
+          {tweetUploadProgress > 0 && (
+            <div className="mt-2">
+              <Progress value={tweetUploadProgress} className="w-full" />
+              <p className="text-sm text-center mt-1">
+                {tweetUploadProgress}% Uploaded 
+                {uploadedTweetsCount > 0 && ` (${uploadedTweetsCount} new tweets)`}
+              </p>
+            </div>
+          )}
+        </div>  
                 </div>
               )}
             </div>
           )}
-
-          {/* Add Raw Tweets Section */}
-          <div className="bg-gray-100 p-4 rounded-lg mb-4">
-            <h3 className="font-bold mb-2">Add Raw Tweets</h3>
-            <Textarea
-              value={rawTweets}
-              onChange={(e) => setRawTweets(e.target.value)}
-              placeholder="Enter raw tweets here..."
-              rows={1}
-              className="mb-2"
-            />
-            <Button onClick={handleSubmitTweets} disabled={!rawTweets.trim() || tweetUploadProgress > 0}>
-              {tweetUploadProgress > 0 ? 'Uploading...' : 'Add Tweets'}
-            </Button>
-            {tweetUploadProgress > 0 && (
-              <div className="mt-2">
-                <Progress value={tweetUploadProgress} className="w-full" />
-                <p className="text-sm text-center mt-1">
-                  {tweetUploadProgress}% Uploaded 
-                  {uploadedTweetsCount > 0 && ` (${uploadedTweetsCount} new tweets)`}
-                </p>
-              </div>
-            )}
-          </div>
 
           {/* Latest Tweets Section */}
           <div className="bg-gray-100 p-4 rounded-lg mb-4">
