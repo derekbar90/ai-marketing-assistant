@@ -17,6 +17,7 @@ import { Progress } from '../components/ui/progress';
 import { Textarea } from '../components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { parseTweets } from '../utils/twitterParser'; // Ensure parseTweets is imported
+import { v5 as uuidv5 } from 'uuid'; // Change this import to v5
 
 export function splitText(text, chunkSize = 1000, chunkOverlap = 200) {
   const chunks = [];
@@ -69,6 +70,8 @@ export const PartnerSidebar = () => {
   const [isTitleGenerating, setIsTitleGenerating] = useState(false);
   const [rawTweets, setRawTweets] = useState('');
   const [latestTweets, setLatestTweets] = useState([]);
+  const [tweetUploadProgress, setTweetUploadProgress] = useState(0);
+  const [uploadedTweetsCount, setUploadedTweetsCount] = useState(0);
 
   useEffect(() => {
     if (selectedPartner) {
@@ -414,27 +417,48 @@ export const PartnerSidebar = () => {
       return;
     }
 
+    const NAMESPACE = '1b671a64-40d5-491e-99b0-da01ff1f3341';
+
     try {
       const parsed = parseTweets(rawTweets);
       const { tweets } = parsed;
+      
+      setTweetUploadProgress(0);
+      setUploadedTweetsCount(0);
 
-      for (const tweet of tweets) {
+      for (let i = 0; i < tweets.length; i++) {
+        const tweet = tweets[i];
         try {
-          await db.query(`
-            INSERT INTO partner_tweets (partner_id, date, content)
-            VALUES ($1, $2, $3);
-          `, [selectedPartner.id, tweet.date, tweet.content]);
+          const uniqueId = uuidv5(`${tweet.content}${tweet.date}`, NAMESPACE);
+
+          const result = await db.query(`
+            INSERT INTO partner_tweets (id, partner_id, date, content)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (id) DO NOTHING
+            RETURNING id;
+          `, [uniqueId, selectedPartner.id, tweet.date, tweet.content]);
+
+          // If a row was inserted (not ignored due to conflict), increment the count
+          if (result.rowCount > 0) {
+            setUploadedTweetsCount(prev => prev + 1);
+          }
+
+          // Update progress
+          setTweetUploadProgress(Math.round(((i + 1) / tweets.length) * 100));
         } catch (error) {
           console.error('Error adding tweet:', error);
           setToast({ show: true, message: 'Error adding tweet', type: 'error' }); 
         }
       }
 
-      setToast({ show: true, message: 'Tweets successfully added', type: 'success' });
+      setToast({ show: true, message: `Successfully added ${uploadedTweetsCount} new tweets`, type: 'success' });
       setRawTweets('');
+      await fetchLatestTweets();
     } catch (error) {
       console.error('Error adding tweets:', error);
       setToast({ show: true, message: 'Error adding tweets', type: 'error' });
+    } finally {
+      setTweetUploadProgress(0); // Reset progress after completion or error
     }
   };
 
@@ -712,9 +736,18 @@ export const PartnerSidebar = () => {
               rows={6}
               className="mb-2"
             />
-            <Button onClick={handleSubmitTweets} disabled={!rawTweets.trim()}>
-              Add Tweets
+            <Button onClick={handleSubmitTweets} disabled={!rawTweets.trim() || tweetUploadProgress > 0}>
+              {tweetUploadProgress > 0 ? 'Uploading...' : 'Add Tweets'}
             </Button>
+            {tweetUploadProgress > 0 && (
+              <div className="mt-2">
+                <Progress value={tweetUploadProgress} className="w-full" />
+                <p className="text-sm text-center mt-1">
+                  {tweetUploadProgress}% Uploaded 
+                  {uploadedTweetsCount > 0 && ` (${uploadedTweetsCount} new tweets)`}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Latest Tweets Section */}
