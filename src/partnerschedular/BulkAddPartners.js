@@ -39,6 +39,16 @@ export const BulkAddPartners = ({ onClose }) => {
     });
   };
 
+  const handleSyncWeights = () => {
+    const lines = bulkInput.split('\n');
+    const updatedPartners = lines.map(line => {
+      const [name, color, weight, twitter] = line.split(',').map(item => item.trim());
+      return { name, color, weight: parseInt(weight, 10), twitter };
+    });
+
+    dispatch({ type: 'SYNC_PARTNER_WEIGHTS', payload: updatedPartners });
+  };
+
   return (
     <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
       <Card className="w-1/2">
@@ -61,6 +71,9 @@ export const BulkAddPartners = ({ onClose }) => {
             </Button>
             <Button onClick={handleCopyPartners} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
               Copy Partners
+            </Button>
+            <Button onClick={handleSyncWeights} className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
+              Sync Weights
             </Button>
           </div>
         </CardContent>

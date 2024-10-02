@@ -320,6 +320,16 @@ export const appReducer = (state, action) => {
         templateManagerOpen: false,
       };
 
+    case 'SYNC_PARTNER_WEIGHTS':
+      const updatedPartners = state.partners.map(partner => {
+        const matchingPartner = action.payload.find(p => p.twitter && p.twitter.toLowerCase() === partner.twitter.toLowerCase());
+        if (matchingPartner) {
+          return { ...partner, weight: matchingPartner.weight };
+        }
+        return partner;
+      });
+      return { ...state, partners: updatedPartners };
+
     default:
       return state;
   }
