@@ -398,6 +398,10 @@ export const PartnerSidebar = () => {
 
       for (let i = 0; i < tweets.length; i++) {
         const tweet = tweets[i];
+
+        if(!tweet.tweetText) {
+          continue;
+        }
         try {
           const uniqueId = uuidv5(`${tweet.tweetText}${tweet.timestamp}`, NAMESPACE);
 
