@@ -135,8 +135,8 @@ export const EventSidebar = () => {
   };
 
   const handleGeneratedContentEdit = (content) => {
-    const editor = editorRef.current.getEditor();
-    const plainText = editor.getText(); // Retrieves plain text without formatting
+    const editor = editorRef.current?.getEditor();
+    const plainText = editor?.getText(); // Retrieves plain text without formatting
     dispatch({ type: 'UPDATE_EVENT_GENERATED_CONTENT', payload: { id: selectedEvent.id, content: plainText } });
   };
 
