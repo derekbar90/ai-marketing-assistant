@@ -1,60 +1,28 @@
-import { useState, useContext } from 'react';
-import { createOpenAIInstance } from '../index';
-import { useSelfPartnerData } from '../../hooks/useSelfPartnerData';
-import { AppContext } from '../index';
+import { useState } from 'react';
+import { useOpenAIEmbeddings } from '../../hooks/useOpenAIEmbeddings';
 
 export const useRefineIdea = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [refinedIdea, setRefinedIdea] = useState(null);
-  const { state } = useContext(AppContext);
-  const { queryEmbeddedFiles, loading: selfDataLoading, error: selfDataError } = useSelfPartnerData();
+  const [isRefining, setIsRefining] = useState(false);
+  const { generateEmbeddings } = useOpenAIEmbeddings();
 
-  const refineIdea = async (idea, additionalContext) => {
-    setIsLoading(true);
-    console.log('Refining idea:', idea);
-
+  const refineIdea = async (event, comments) => {
+    setIsRefining(true);
     try {
-      const client = createOpenAIInstance();
-      const selfData = await queryEmbeddedFiles(`${idea.title} ${idea.brief}`, 20);
+      // Here you would typically call your AI service to refine the content
+      // For now, we'll just append the comments to the existing content
+      const refinedContent = `${event.generatedContent}\n\nRefinements based on feedback:\n${comments}`;
+      
+      // You might want to generate new embeddings for the refined content
+      // await generateEmbeddings(refinedContent);
 
-      console.log("🧙‍♂️ 🔎 -> ~ refineIdea ~ selfData:", selfData)
-      const systemPrompt = `
-      You are an AI agent specialized in refining and correlating content ideas to user context. 
-      The provided ideas are for a partner of the user. You will be provided user context, and partner context to improve and expand upon the idea. 
-      The goal is to see how the user and relate to the partner and provide support around the dynamics of the idea.
-      Additional Suggestions should 
-      - target the relationship between the user and partner and how it can be leveraged for the idea.
-      - contain user product features that are relevant to the idea.
-      - contain data points from the partner context which will be required for content creation.
-      Return the refined idea as a JSON object with the following structure: { title: string, template: string, topic: string, relevance: number, brief: string, additionalSuggestions: string[] }
-      `;
-
-      const userPrompt = `Initial Idea: ${JSON.stringify(idea)}
-      User Context: ${selfData}
-      Partner Context: ${additionalContext}`;
-
-      const response = await client.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-        response_format: { type: "json_object" }
-      });
-
-      const result = JSON.parse(response.choices[0].message.content);
-      setRefinedIdea(result);
-      return result;
+      return refinedContent;
     } catch (error) {
-      console.error('Error in idea refinement process:', error);
-      setRefinedIdea(null);
+      console.error('Error refining idea:', error);
       throw error;
     } finally {
-      setIsLoading(false);
+      setIsRefining(false);
     }
   };
 
-  return { isLoading: isLoading || selfDataLoading, refinedIdea, refineIdea };
+  return { refineIdea, isRefining };
 };

@@ -14,6 +14,8 @@ import { useTypefullyDrafts } from '../hooks/useTypefullyDrafts';
 import { usePartnerTweets } from '../hooks/usePartnerTweets';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { useOpenAI } from '../hooks/useOpenAI';
+import { Textarea } from '../components/ui/textarea';
 
 const EventDetailItem = ({ label, value }) => (
   <div>
@@ -144,6 +146,29 @@ export const EventSidebar = () => {
     'link', 'image'
   ];
 
+  const [refinementComments, setRefinementComments] = useState('');
+  const apiKey = localStorage.getItem('chatgptApiKey');
+  const { getCompletion, loading: isRefining } = useOpenAI(apiKey);
+
+  const handleRefineContent = async () => {
+    if (currentEvent.generatedContent && refinementComments) {
+      const prompt = `Please refine the following content based on these comments: "${refinementComments}"\n\nOriginal content:\n${currentEvent.generatedContent}`;
+      
+      try {
+        const refinedContent = await getCompletion(prompt);
+        if (refinedContent) {
+          dispatch({
+            type: 'UPDATE_EVENT_GENERATED_CONTENT',
+            payload: { id: selectedEvent.id, content: refinedContent }
+          });
+          setRefinementComments('');
+        }
+      } catch (error) {
+        dispatch({ type: 'SET_ERROR', payload: 'Failed to refine content. Please try again.' });
+      }
+    }
+  };
+
   return (
     <div className="fixed top-0 left-0 z-50 w-2/3 h-full bg-white shadow-lg">
       <Card className="h-full overflow-auto">
@@ -272,14 +297,33 @@ export const EventSidebar = () => {
             <div className="p-2 mt-4">
               <h3 className="text-lg font-bold">Generated Content</h3>
               {currentEvent.selectedIdea && <p><strong>Selected Idea:</strong> {currentEvent.selectedIdea.title}</p>}
-              <ReactQuill
-                theme="snow"
-                value={currentEvent.generatedContent}
-                onChange={handleGeneratedContentEdit}
-                modules={modules}
-                formats={formats}
-                className="h-64 mb-4"
-              />
+              <div className="flex space-x-4">
+                <div className="w-1/3">
+                  <Textarea
+                    placeholder="Enter refinement comments..."
+                    value={refinementComments}
+                    onChange={(e) => setRefinementComments(e.target.value)}
+                    className="mb-2 h-32"
+                  />
+                  <Button
+                    onClick={handleRefineContent}
+                    className="w-full px-4 py-2 font-bold text-white bg-purple-500 rounded hover:bg-purple-700"
+                    disabled={isRefining || !refinementComments}
+                  >
+                    {isRefining ? 'Refining...' : 'Refine Content'}
+                  </Button>
+                </div>
+                <div className="w-2/3">
+                  <ReactQuill
+                    theme="snow"
+                    value={currentEvent.generatedContent}
+                    onChange={handleGeneratedContentEdit}
+                    modules={modules}
+                    formats={formats}
+                    className="h-64 mb-4"
+                  />
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
