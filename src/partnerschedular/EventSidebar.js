@@ -44,7 +44,7 @@ export const EventSidebar = () => {
   const { generateContent, isLoading } = useContentGenerator();
   const { addDraft, isLoading: isTypefullyLoading, error: typefullyError } = useTypefullyDrafts();
 
-  const { tweets, loading: tweetsLoading, error: tweetsError } = usePartnerTweets(selectedEvent.partner.id, 15);
+  const { tweets, loading: tweetsLoading, error: tweetsError } = usePartnerTweets(selectedEvent.partner.id, 50);
 
   const additionalContext = selectedEvent.contentType === 'Tweet' ? tweets.map(tweet => tweet.text).join('\n') : '';
 
