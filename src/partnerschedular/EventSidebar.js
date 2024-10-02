@@ -1,5 +1,5 @@
 // EventSidebar.js
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { TemplateManager } from './TemplateManager';
@@ -50,10 +50,20 @@ export const EventSidebar = () => {
 
   const handleOpenTemplateManager = () => setIsTemplateManagerOpen(true);
   const handleCloseTemplateManager = () => setIsTemplateManagerOpen(false);
-
+  
   const handleApproveContent = async () => {
-    if (currentEvent.generatedContent) {
-      // const result = await addDraft(currentEvent.generatedContent);
+    const editor = editorRef.current.getEditor();
+    const plainText = editor.getText(); // Retrieves plain text without formatting
+    if (plainText) {
+      const result = await addDraft({
+        content: plainText,
+        threadify: false,
+        share: false,
+        scheduleDate: selectedEvent.date,
+        autoRetweetEnabled: false,
+        autoPlugEnabled: false,
+      });
+      console.log("🧙‍♂️ 🔎 -> ~ handleApproveContent ~ result:", result)
       if (result) {
         dispatch({ type: 'APPROVE_EVENT_CONTENT', payload: { id: selectedEvent.id } });
         setIsApproved(true);
@@ -125,7 +135,9 @@ export const EventSidebar = () => {
   };
 
   const handleGeneratedContentEdit = (content) => {
-    dispatch({ type: 'UPDATE_EVENT_GENERATED_CONTENT', payload: { id: selectedEvent.id, content } });
+    const editor = editorRef.current.getEditor();
+    const plainText = editor.getText(); // Retrieves plain text without formatting
+    dispatch({ type: 'UPDATE_EVENT_GENERATED_CONTENT', payload: { id: selectedEvent.id, content: plainText } });
   };
 
   // Quill editor modules and formats
@@ -168,6 +180,14 @@ export const EventSidebar = () => {
       }
     }
   };
+
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const toggleAdvancedMode = () => {
+    setShowAdvanced(!showAdvanced);
+  };
+
+  const editorRef = useRef(null);
 
   return (
     <div className="fixed top-0 left-0 z-50 w-2/3 h-full bg-white shadow-lg">
@@ -235,19 +255,32 @@ export const EventSidebar = () => {
             onSelectIdea={handleSelectIdea}
           />
 
+          <div className="flex justify-end mt-4 mb-2">
+            <Button
+              onClick={toggleAdvancedMode}
+              variant="outline"
+              size="sm"
+              className={`${showAdvanced ? 'bg-blue-100' : ''}`}
+            >
+              {showAdvanced ? 'Hide Advanced' : 'Show Advanced'}
+            </Button>
+          </div>
+
           <div className="flex flex-row space-x-4 mt-4">
-            <div className="w-1/2">
-              <h3 className="text-lg font-bold mb-2">Additional Context</h3>
-              <ReactQuill
-                theme="snow"
-                value={actualAdditionalContext}
-                onChange={setActualAdditionalContext}
-                modules={modules}
-                formats={formats}
-                className="h-64 mb-4"
-              />
-            </div>
-            <div className="flex flex-col w-1/2 space-y-4">
+            {showAdvanced && (
+              <>
+              <div className="w-1/2">
+                <h3 className="text-lg font-bold mb-2">Additional Context</h3>
+                <ReactQuill
+                  theme="snow"
+                  value={actualAdditionalContext}
+                  onChange={setActualAdditionalContext}
+                  modules={modules}
+                  formats={formats}
+                  className="h-64 mb-4"
+                />
+              </div>
+              <div className={`flex flex-col w-full space-y-4`}>
               <select
                 value={selectedTemplate?.title || ''}
                 onChange={(e) => setSelectedTemplate(state.templates.find(template => template.title === e.target.value))}
@@ -292,11 +325,26 @@ export const EventSidebar = () => {
                 Manage Templates
               </Button>
             </div>
+              </>
+            )}
+            
           </div>
           {currentEvent.generatedContent && (
             <div className="p-2 mt-4">
               <h3 className="text-lg font-bold">Generated Content</h3>
-              {currentEvent.selectedIdea && <p><strong>Selected Idea:</strong> {currentEvent.selectedIdea.title}</p>}
+              {currentEvent.selectedIdea && (
+                <div className="space-y-2">
+                  <h4 className="text-lg font-semibold">{currentEvent.selectedIdea.title}</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <EventDetailItem label="Template" value={currentEvent.selectedIdea.template} />
+                    <EventDetailItem label="Topic" value={currentEvent.selectedIdea.topic} />
+                  </div>
+                  <div>
+                      <p className="text-sm text-gray-600">Brief</p>
+                      <p className="text-sm">{currentEvent.selectedIdea.brief}</p>
+                    </div>
+                </div>
+              )}
               <div className="flex space-x-4">
                 <div className="w-1/3">
                   <Textarea
@@ -321,6 +369,7 @@ export const EventSidebar = () => {
                     modules={modules}
                     formats={formats}
                     className="h-64 mb-4"
+                    ref={editorRef}
                   />
                 </div>
               </div>

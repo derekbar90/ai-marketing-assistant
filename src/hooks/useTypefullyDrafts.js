@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const API_ROOT = 'https://api.typefully.com/v1';
+const API_ROOT = 'http://localhost:3020'; // Assuming your server is hosted on the same domain
 
 export const useTypefullyDrafts = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -10,28 +10,19 @@ export const useTypefullyDrafts = () => {
     setIsLoading(true);
     setError(null);
 
-    const typefullyApiKey = localStorage.getItem('typefullyApiKey');
-
-    if (!typefullyApiKey) {
-      setError('Typefully API key not found. Please set it in the Settings.');
-      setIsLoading(false);
-      return null;
-    }
-
     try {
-      const response = await fetch(`${API_ROOT}/drafts/`, {
+      const response = await fetch(`${API_ROOT}/upload-draft`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-KEY': typefullyApiKey, // Removed 'Bearer '
         },
         body: JSON.stringify({
           content,
-          threadify: options.threadify || false,
-          share: options.share || false,
-          'schedule-date': options.scheduleDate || 'next-free-slot',
-          auto_retweet_enabled: options.autoRetweetEnabled || false,
-          auto_plug_enabled: options.autoPlugEnabled || false,
+          threadify: options.threadify,
+          share: options.share,
+          scheduleDate: options.scheduleDate,
+          autoRetweetEnabled: options.autoRetweetEnabled,
+          autoPlugEnabled: options.autoPlugEnabled,
         }),
       });
 
