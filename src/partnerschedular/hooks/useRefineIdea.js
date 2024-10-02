@@ -19,9 +19,15 @@ export const useRefineIdea = () => {
 
       console.log("🧙‍♂️ 🔎 -> ~ refineIdea ~ selfData:", selfData)
       const systemPrompt = `
-      You are an AI assistant specialized in refining content ideas. The provided ideas are for a partner of the user. You will be provided user context, and partner context to improve and expand upon the idea. 
+      You are an AI agent specialized in refining and correlating content ideas to user context. 
+      The provided ideas are for a partner of the user. You will be provided user context, and partner context to improve and expand upon the idea. 
       The goal is to see how the user and relate to the partner and provide support around the dynamics of the idea.
-      Return the refined idea as a JSON object with the following structure: { title: string, template: string, topic: string, relevance: number, brief: string, additionalSuggestions: string[] }`;
+      Additional Suggestions should 
+      - target the relationship between the user and partner and how it can be leveraged for the idea.
+      - contain user product features that are relevant to the idea.
+      - contain data points from the partner context which will be required for content creation.
+      Return the refined idea as a JSON object with the following structure: { title: string, template: string, topic: string, relevance: number, brief: string, additionalSuggestions: string[] }
+      `;
 
       const userPrompt = `Initial Idea: ${JSON.stringify(idea)}
       User Context: ${selfData}

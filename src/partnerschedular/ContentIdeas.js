@@ -71,7 +71,6 @@ export const ContentIdeas = ({ event, selectedTemplate, additionalContext, actua
           </Button>
         </div>
       )}
-
       {contentIdeas.length > 0 && (
         <div className="mt-4 p-2 border rounded bg-gray-100">
           <h3 className="text-lg font-bold">Content Ideas</h3>
