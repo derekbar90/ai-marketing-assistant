@@ -67,10 +67,6 @@ const runAppMigrations = async () => {
       ON partner_chunks USING hnsw (embedding vector_ip_ops);
     `);
 
-    await db.query(`
-      DROP TABLE IF EXISTS partner_tweets;
-    `);
-
     // Create partner_tweets table
     await db.query(`
       CREATE TABLE IF NOT EXISTS partner_tweets (
