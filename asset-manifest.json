@@ -1,29 +1,29 @@
 {
   "files": {
-    "main.css": "/ai-marketing-assistant/static/css/main.24d8f8da.css",
-    "main.js": "/ai-marketing-assistant/static/js/main.f983fb33.js",
+    "main.css": "/ai-marketing-assistant/static/css/main.f29714e3.css",
+    "main.js": "/ai-marketing-assistant/static/js/main.5aca94ff.js",
     "static/js/837.7b26c179.chunk.js": "/ai-marketing-assistant/static/js/837.7b26c179.chunk.js",
     "static/js/391.064a4727.chunk.js": "/ai-marketing-assistant/static/js/391.064a4727.chunk.js",
     "static/js/317.e8689b3c.chunk.js": "/ai-marketing-assistant/static/js/317.e8689b3c.chunk.js",
     "static/js/320.15825301.chunk.js": "/ai-marketing-assistant/static/js/320.15825301.chunk.js",
     "static/js/407.1d9f8b27.chunk.js": "/ai-marketing-assistant/static/js/407.1d9f8b27.chunk.js",
     "static/js/483.afd6e2ce.chunk.js": "/ai-marketing-assistant/static/js/483.afd6e2ce.chunk.js",
-    "static/js/639.bab8414c.chunk.js": "/ai-marketing-assistant/static/js/639.bab8414c.chunk.js",
-    "static/js/237.e612164c.chunk.js": "/ai-marketing-assistant/static/js/237.e612164c.chunk.js",
+    "static/js/639.f445b404.chunk.js": "/ai-marketing-assistant/static/js/639.f445b404.chunk.js",
+    "static/js/231.f0d7bec1.chunk.js": "/ai-marketing-assistant/static/js/231.f0d7bec1.chunk.js",
     "static/js/977.9ca3da67.chunk.js": "/ai-marketing-assistant/static/js/977.9ca3da67.chunk.js",
-    "static/media/postgres.wasm": "/ai-marketing-assistant/static/media/postgres.813453250e254b137d65.wasm",
-    "static/media/postgres.data": "/ai-marketing-assistant/static/media/postgres.2078bb3e4d709de257dc.data",
-    "static/media/index.js": "/ai-marketing-assistant/static/media/index.a2cc2b83806dc3bdd013.js",
-    "static/media/vector.tar.gz": "/ai-marketing-assistant/static/media/vector.tar.2d36e007f9b1c07e6a75.gz",
+    "static/media/postgres.wasm": "/ai-marketing-assistant/static/media/postgres.f7b2d7eafaef9fbb1dc8.wasm",
+    "static/media/postgres.data": "/ai-marketing-assistant/static/media/postgres.b140c93f8140eb3b4806.data",
+    "static/media/vector.tar.gz": "/ai-marketing-assistant/static/media/vector.tar.9a4b9261f33028e4e0bc.gz",
+    "static/media/index.js": "/ai-marketing-assistant/static/media/index.cbc71a3fdcbaea1c77d0.js",
     "index.html": "/ai-marketing-assistant/index.html",
-    "main.24d8f8da.css.map": "/ai-marketing-assistant/static/css/main.24d8f8da.css.map",
-    "main.f983fb33.js.map": "/ai-marketing-assistant/static/js/main.f983fb33.js.map",
+    "main.f29714e3.css.map": "/ai-marketing-assistant/static/css/main.f29714e3.css.map",
+    "main.5aca94ff.js.map": "/ai-marketing-assistant/static/js/main.5aca94ff.js.map",
     "407.1d9f8b27.chunk.js.map": "/ai-marketing-assistant/static/js/407.1d9f8b27.chunk.js.map",
     "483.afd6e2ce.chunk.js.map": "/ai-marketing-assistant/static/js/483.afd6e2ce.chunk.js.map",
-    "639.bab8414c.chunk.js.map": "/ai-marketing-assistant/static/js/639.bab8414c.chunk.js.map"
+    "639.f445b404.chunk.js.map": "/ai-marketing-assistant/static/js/639.f445b404.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.24d8f8da.css",
-    "static/js/main.f983fb33.js"
+    "static/css/main.f29714e3.css",
+    "static/js/main.5aca94ff.js"
   ]
 }
