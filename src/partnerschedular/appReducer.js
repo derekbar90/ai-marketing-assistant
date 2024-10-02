@@ -157,6 +157,20 @@ export const appReducer = (state, action) => {
           partner.id === action.payload.id ? action.payload : partner
         ) 
       };
+    case 'UPDATE_EVENT_GENERATED_CONTENT':
+      return {
+        ...state,
+        schedule: state.schedule.map(event =>
+          event.id === action.payload.id
+            ? {
+                ...event,
+                generatedContent: action.payload.content,
+                isApproved: false,
+                selectedIdea: action.payload.selectedIdea || event.selectedIdea
+              }
+            : event
+        )
+      };
     case 'UPDATE_EVENT_CONTENT':
       console.log('Updating event content. Payload:', action.payload);
       console.log('Current state:', state);

@@ -12,6 +12,8 @@ import ReactMarkdown from 'react-markdown';
 import { PartnerAssumptions } from './PartnerAssumptions';
 import { useTypefullyDrafts } from '../hooks/useTypefullyDrafts';
 import { usePartnerTweets } from '../hooks/usePartnerTweets';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const EventDetailItem = ({ label, value }) => (
   <div>
@@ -120,6 +122,28 @@ export const EventSidebar = () => {
     dispatch({ type: 'OPEN_PARTNER_SIDEBAR', payload: selectedEvent.partner });
   };
 
+  const handleGeneratedContentEdit = (content) => {
+    dispatch({ type: 'UPDATE_EVENT_GENERATED_CONTENT', payload: { id: selectedEvent.id, content } });
+  };
+
+  // Quill editor modules and formats
+  const modules = {
+    toolbar: [
+      [{ 'header': [1, 2, false] }],
+      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+      [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
+      ['link', 'image'],
+      ['clean']
+    ],
+  };
+
+  const formats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike', 'blockquote',
+    'list', 'bullet', 'indent',
+    'link', 'image'
+  ];
+
   return (
     <div className="fixed top-0 left-0 z-50 w-2/3 h-full bg-white shadow-lg">
       <Card className="h-full overflow-auto">
@@ -186,60 +210,76 @@ export const EventSidebar = () => {
             onSelectIdea={handleSelectIdea}
           />
 
-          <div className="flex flex-row space-x-4">
-          <textarea
-          value={actualAdditionalContext}
-          onChange={(e) => setActualAdditionalContext(e.target.value)}
-          placeholder="Enter actual additional context"
-          className="w-1/2 p-2 mb-2 border rounded"
-          />
-          <div className="flex flex-col w-1/2 space-x-4">
-          <select
-            value={selectedTemplate?.title || ''}
-            onChange={(e) => setSelectedTemplate(state.templates.find(template => template.title === e.target.value))}
-            className="w-full p-2 mb-2 border rounded"
-          >
-            <option value="" disabled>Select a template</option>
-            {state.templates && state.templates.map((template, index) => (
-              <option key={index} value={template.title}>{template.title}</option>
-            ))}
-          </select>
+          <div className="flex flex-row space-x-4 mt-4">
+            <div className="w-1/2">
+              <h3 className="text-lg font-bold mb-2">Additional Context</h3>
+              <ReactQuill
+                theme="snow"
+                value={actualAdditionalContext}
+                onChange={setActualAdditionalContext}
+                modules={modules}
+                formats={formats}
+                className="h-64 mb-4"
+              />
+            </div>
+            <div className="flex flex-col w-1/2 space-y-4">
+              <select
+                value={selectedTemplate?.title || ''}
+                onChange={(e) => setSelectedTemplate(state.templates.find(template => template.title === e.target.value))}
+                className="w-full p-2 border rounded"
+              >
+                <option value="" disabled>Select a template</option>
+                {state.templates && state.templates.map((template, index) => (
+                  <option key={index} value={template.title}>{template.title}</option>
+                ))}
+              </select>
 
-          <select
-            value={contentSize}
-            onChange={(e) => setContentSize(parseInt(e.target.value))}
-            className="w-full p-2 mb-2 border rounded"
-          >
-            {contentSizeOptions.map((option) => (
-              <option key={option.label} value={option.value}>{option.label}</option>
-            ))}
-          </select>
+              <select
+                value={contentSize}
+                onChange={(e) => setContentSize(parseInt(e.target.value))}
+                className="w-full p-2 border rounded"
+              >
+                {contentSizeOptions.map((option) => (
+                  <option key={option.label} value={option.value}>{option.label}</option>
+                ))}
+              </select>
 
-          <Button
-            onClick={handleGenerateContent}
-            className="w-full px-4 py-2 mb-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Generating Content...' : 'Generate Content'}
-          </Button>
-          <Button
-            onClick={handleApproveContent}
-            className="w-full px-4 py-2 mb-2 font-bold text-white bg-green-500 rounded hover:bg-green-700"
-            disabled={isApproved || !currentEvent.generatedContent || isTypefullyLoading}
-          >
-            {isTypefullyLoading ? 'Adding to Typefully...' : (isApproved ? 'Approved' : 'Approve Content')}
-          </Button>
+              <Button
+                onClick={handleGenerateContent}
+                className="w-full px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Generating Content...' : 'Generate Content'}
+              </Button>
 
-          <Button onClick={handleOpenTemplateManager} className="w-full px-4 py-2 mb-2 font-bold text-white bg-green-500 rounded hover:bg-green-700">
-            Manage Templates
-          </Button>
-          </div>
+              <Button
+                onClick={handleApproveContent}
+                className="w-full px-4 py-2 font-bold text-white bg-green-500 rounded hover:bg-green-700"
+                disabled={isApproved || !currentEvent.generatedContent || isTypefullyLoading}
+              >
+                {isTypefullyLoading ? 'Adding to Typefully...' : (isApproved ? 'Approved' : 'Approve Content')}
+              </Button>
+
+              <Button 
+                onClick={handleOpenTemplateManager} 
+                className="w-full px-4 py-2 font-bold text-white bg-green-500 rounded hover:bg-green-700"
+              >
+                Manage Templates
+              </Button>
+            </div>
           </div>
           {currentEvent.generatedContent && (
-            <div className="p-2 mt-4 bg-gray-100 border rounded">
+            <div className="p-2 mt-4">
               <h3 className="text-lg font-bold">Generated Content</h3>
               {currentEvent.selectedIdea && <p><strong>Selected Idea:</strong> {currentEvent.selectedIdea.title}</p>}
-              <ReactMarkdown>{currentEvent.generatedContent}</ReactMarkdown>
+              <ReactQuill
+                theme="snow"
+                value={currentEvent.generatedContent}
+                onChange={handleGeneratedContentEdit}
+                modules={modules}
+                formats={formats}
+                className="h-64 mb-4"
+              />
             </div>
           )}
         </CardContent>

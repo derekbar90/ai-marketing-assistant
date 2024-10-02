@@ -401,13 +401,20 @@ export const PartnerSidebar = () => {
         try {
           const uniqueId = uuidv5(`${tweet.tweetText}${tweet.timestamp}`, NAMESPACE);
 
+          // Generate embedding for tweet content
+          const embedding = await getEmbedding(tweet.tweetText);
+          if (!embedding) {
+            throw new Error('Failed to get embedding for tweet');
+          }
+          const embeddingString = `[${embedding.join(',')}]`;
+
           const result = await db.query(`
             INSERT INTO partner_tweets (
               id, partner_id, date, content, username, handle, 
               reply_count, retweet_count, like_count, view_count, 
-              image_url, is_verified
+              image_url, is_verified, embedding
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::vector)
             ON CONFLICT (id) DO UPDATE SET
               date = EXCLUDED.date,
               content = EXCLUDED.content,
@@ -418,7 +425,8 @@ export const PartnerSidebar = () => {
               like_count = EXCLUDED.like_count,
               view_count = EXCLUDED.view_count,
               image_url = EXCLUDED.image_url,
-              is_verified = EXCLUDED.is_verified
+              is_verified = EXCLUDED.is_verified,
+              embedding = EXCLUDED.embedding
             RETURNING id;
           `, [
             uniqueId, 
@@ -432,7 +440,8 @@ export const PartnerSidebar = () => {
             parseInt(tweet.likeCount),
             tweet.viewCount,
             tweet.imageUrl,
-            tweet.isVerified
+            tweet.isVerified,
+            embeddingString
           ]);
 
           if (result.rowCount > 0) {
@@ -731,7 +740,12 @@ export const PartnerSidebar = () => {
               Import Tweets
             </Button>
             {tweetUploadProgress > 0 && (
-              <Progress value={tweetUploadProgress} className="mt-2" />
+              <div className="mt-2">
+                <Progress value={tweetUploadProgress} className="mb-2" />
+                <p className="text-sm text-center">
+                  {`Uploading: ${tweetUploadProgress}% (${uploadedTweetsCount} tweets processed)`}
+                </p>
+              </div>
             )}
           </div>
         </div>

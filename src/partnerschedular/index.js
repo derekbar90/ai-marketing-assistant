@@ -1,3 +1,4 @@
+import 'react-quill/dist/quill.snow.css';
 import React, { useReducer, createContext, useState, useEffect } from 'react';
 import { usePGlite } from "@electric-sql/pglite-react";
 import { PartnerList } from './PartnerList';
@@ -81,8 +82,15 @@ const runAppMigrations = async () => {
         like_count INTEGER,
         view_count INTEGER,
         image_url TEXT,
-        is_verified BOOLEAN
+        is_verified BOOLEAN,
+        embedding vector(1536)
       );
+    `);
+
+    // Create index for partner_tweets
+    await db.query(`
+      CREATE INDEX IF NOT EXISTS partner_tweets_embedding_idx 
+      ON partner_tweets USING hnsw (embedding vector_ip_ops);
     `);
     
     console.log('App migrations completed successfully');
