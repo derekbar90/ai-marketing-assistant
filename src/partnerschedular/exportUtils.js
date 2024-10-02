@@ -1,5 +1,5 @@
 export const exportToCSV = (schedule) => {
-    const headers = ['Date', 'Partner', 'Content Type', 'Time Slot'];
+    const headers = ['date', 'platform', 'type', 'timeframe'];
     const csvContent = [
       headers.join(','),
       ...schedule.map(event => [
