@@ -134,10 +134,20 @@ export const EventSidebar = () => {
     dispatch({ type: 'OPEN_PARTNER_SIDEBAR', payload: selectedEvent.partner });
   };
 
+  
   const handleGeneratedContentEdit = (content) => {
     const editor = editorRef.current?.getEditor();
     const plainText = editor?.getText(); // Retrieves plain text without formatting
-    dispatch({ type: 'UPDATE_EVENT_GENERATED_CONTENT', payload: { id: selectedEvent.id, content: plainText } });
+    if (plainText && plainText !== currentEvent.generatedContent) {
+      dispatch({
+        type: 'UPDATE_EVENT_GENERATED_CONTENT',
+        payload: {
+          id: selectedEvent.id,
+          content: plainText,
+          lastEditedAt: new Date().toISOString()
+        }
+      });
+    }
   };
 
   // Quill editor modules and formats
