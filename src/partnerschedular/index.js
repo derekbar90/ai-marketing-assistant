@@ -67,15 +67,28 @@ const runAppMigrations = async () => {
       ON partner_chunks USING hnsw (embedding vector_ip_ops);
     `);
 
+    await db.query(`
+      DROP TABLE IF EXISTS partner_tweets;
+    `);
+
     // Create partner_tweets table
     await db.query(`
       CREATE TABLE IF NOT EXISTS partner_tweets (
         id TEXT PRIMARY KEY,
         partner_id TEXT,
-        date DATE,
-        content TEXT
+        date TIMESTAMP,
+        content TEXT,
+        username TEXT,
+        handle TEXT,
+        reply_count INTEGER,
+        retweet_count INTEGER,
+        like_count INTEGER,
+        view_count INTEGER,
+        image_url TEXT,
+        is_verified BOOLEAN
       );
     `);
+    
     console.log('App migrations completed successfully');
   } catch (error) {
     console.error('Error in runAppMigrations:', error);

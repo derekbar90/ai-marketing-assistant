@@ -29,7 +29,7 @@ export const useContentGenerator = () => {
         selectedTemplate,
         additionalContext,
         actualAdditionalContext,
-        idea,
+        idea: idea,
         contentSize,
         selfPartnerDocuments,
       });
@@ -118,6 +118,11 @@ const buildInitialPrompt = ({
   return `
 Please generate ${event.contentType} content for a co-marketing initiative from the perspective of writing user (our company), featuring our partner "${event.partner.name}".
 
+**Content Publication Details:**
+- **Content Type:** ${event.contentType}
+- **Time Slot:** ${event.timeSlot}
+- **Date:** ${eventDate}
+
 **Self (Our Company) Context:**
 ${selfPartnerContext || 'No self-partner data available.'}
 
@@ -126,11 +131,6 @@ ${selfPartnerContext || 'No self-partner data available.'}
 - **Brand Voice:** ${event.partner.brandVoice || 'Dynamic and forward-thinking.'}
 - **Key Messages:** ${event.partner.keyMessages || 'Quality, reliability, and value.'}
 
-**Event Details:**
-- **Content Type:** ${event.contentType}
-- **Time Slot:** ${event.timeSlot}
-- **Date:** ${eventDate}
-
 **Partner's Recent Activity:**
 ${additionalContext || 'No recent activity provided.'}
 
@@ -138,7 +138,10 @@ ${additionalContext || 'No recent activity provided.'}
 ${actualAdditionalContext || 'No additional context provided.'}
 
 **Content Idea:**
-${idea || 'No specific idea provided.'}
+${idea.title || 'No specific idea provided.'}
+
+**Content Idea Brief:**
+${idea.brief || 'No brief provided.'}
 
 **Template:**
 ${selectedTemplate.content}

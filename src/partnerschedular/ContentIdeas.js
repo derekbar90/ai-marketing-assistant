@@ -44,7 +44,6 @@ export const ContentIdeas = ({ event, selectedTemplate, additionalContext, actua
       >
         {isLoading ? 'Generating Ideas...' : 'Generate Content Ideas'}
       </Button>
-      
       {selectedIdea && (
         <div className="mt-4 p-4 border rounded bg-blue-100">
           <h3 className="text-lg font-bold mb-2">Selected Idea</h3>

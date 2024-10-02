@@ -32,8 +32,8 @@ export const EventSidebar = () => {
 
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState('');
-  const [contentSize, setContentSize] = useState(500);
-  const [additionalContext, setAdditionalContext] = useState('');
+  const [contentSize, setContentSize] = useState(selectedEvent.contentType === 'Tweet' ? 100 : 500);
+  
   const [actualAdditionalContext, setActualAdditionalContext] = useState('');
 
   const { isApproved, setIsApproved } = useEventData(selectedEvent);
@@ -42,12 +42,14 @@ export const EventSidebar = () => {
 
   const { tweets, loading: tweetsLoading, error: tweetsError } = usePartnerTweets(selectedEvent.partner.id, 5);
 
+  const additionalContext = selectedEvent.contentType === 'Tweet' ? tweets.map(tweet => tweet.text).join('\n') : '';
+
   const handleOpenTemplateManager = () => setIsTemplateManagerOpen(true);
   const handleCloseTemplateManager = () => setIsTemplateManagerOpen(false);
 
   const handleApproveContent = async () => {
     if (currentEvent.generatedContent) {
-      const result = await addDraft(currentEvent.generatedContent);
+      // const result = await addDraft(currentEvent.generatedContent);
       if (result) {
         dispatch({ type: 'APPROVE_EVENT_CONTENT', payload: { id: selectedEvent.id } });
         setIsApproved(true);
@@ -75,7 +77,7 @@ export const EventSidebar = () => {
 
   const handleSelectIdea = async (idea) => {
     try {
-      const content = await generateContent(selectedEvent, idea.template, contentSize, additionalContext, actualAdditionalContext, idea.title);
+      const content = await generateContent(selectedEvent, idea.template, contentSize, additionalContext, actualAdditionalContext, idea);
       dispatch({
         type: 'UPDATE_EVENT_CONTENT',
         payload: {
@@ -119,9 +121,9 @@ export const EventSidebar = () => {
   };
 
   return (
-    <div className="fixed top-0 left-0 w-2/3 h-full bg-white shadow-lg z-50">
+    <div className="fixed top-0 left-0 z-50 w-2/3 h-full bg-white shadow-lg">
       <Card className="h-full overflow-auto">
-        <CardHeader className="flex flex-row space-x-4 justify-between">
+        <CardHeader className="flex flex-row justify-between space-x-4">
           <CardTitle>Event Details</CardTitle>
           <div className="flex flex-row space-x-4">
           <Button onClick={handleEditPartner} className="">Edit Partner</Button>
@@ -129,11 +131,10 @@ export const EventSidebar = () => {
           </div>
         </CardHeader>
         <CardContent>
-
-          <div className="mb-4 bg-white shadow-md rounded-lg p-6">
-            <div className="flex justify-between items-center">
+          <div className="p-6 mb-4 bg-white rounded-lg shadow-md">
+            <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold mb-1">{selectedEvent.partner.name}</h2>
+                <h2 className="mb-1 text-2xl font-bold">{selectedEvent.partner.name}</h2>
                 {selectedEvent.partner.twitter && (
                   <a
                     href={`https://twitter.com/${selectedEvent.partner.twitter}`}
@@ -147,9 +148,9 @@ export const EventSidebar = () => {
               </div>
               <div className="flex space-x-6">
                 <EventDetailItem label="Content Type" value={selectedEvent.contentType} />
-                <div className="border-r border-gray-300 mx-2"></div>
+                <div className="mx-2 border-r border-gray-300"></div>
                 <EventDetailItem label="Time Slot" value={selectedEvent.timeSlot} />
-                <div className="border-r border-gray-300 mx-2"></div>
+                <div className="mx-2 border-r border-gray-300"></div>
                 <EventDetailItem label="Date" value={new Date(selectedEvent.date).toDateString()} />
               </div>
             </div>
@@ -164,22 +165,16 @@ export const EventSidebar = () => {
                 ) : tweetsError ? (
                   <p>Error loading tweets: {tweetsError}</p>
                 ) : (
-                  <div>
+                  <div className="overflow-y-auto max-h-[250px]">
                     <h3><b>Latest Stored Tweets</b></h3>
                     {tweets.map((tweet) => (
-                      <div key={tweet.id} className="mb-2 p-2 border rounded">
+                      <div key={tweet.id} className="p-2 mb-2 border rounded">
                         <p>{tweet.text}</p>
                         <small>{new Date(tweet.created_at).toLocaleString()}</small>
                       </div>
                     ))}
                   </div>
                 )}
-                <textarea
-                  value={additionalContext}
-                  onChange={(e) => setAdditionalContext(e.target.value)}
-                  placeholder="Enter additional context (Tweets)"
-                  className="mb-2 p-2 border rounded w-full"
-                />
               </div>
             </div>
           </div>
@@ -196,13 +191,13 @@ export const EventSidebar = () => {
           value={actualAdditionalContext}
           onChange={(e) => setActualAdditionalContext(e.target.value)}
           placeholder="Enter actual additional context"
-          className="mb-2 p-2 border rounded w-1/2"
+          className="w-1/2 p-2 mb-2 border rounded"
           />
-          <div className="flex flex-col space-x-4 w-1/2">
+          <div className="flex flex-col w-1/2 space-x-4">
           <select
             value={selectedTemplate?.title || ''}
             onChange={(e) => setSelectedTemplate(state.templates.find(template => template.title === e.target.value))}
-            className="mb-2 p-2 border rounded w-full"
+            className="w-full p-2 mb-2 border rounded"
           >
             <option value="" disabled>Select a template</option>
             {state.templates && state.templates.map((template, index) => (
@@ -213,7 +208,7 @@ export const EventSidebar = () => {
           <select
             value={contentSize}
             onChange={(e) => setContentSize(parseInt(e.target.value))}
-            className="mb-2 p-2 border rounded w-full"
+            className="w-full p-2 mb-2 border rounded"
           >
             {contentSizeOptions.map((option) => (
               <option key={option.label} value={option.value}>{option.label}</option>
@@ -222,26 +217,26 @@ export const EventSidebar = () => {
 
           <Button
             onClick={handleGenerateContent}
-            className="mb-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+            className="w-full px-4 py-2 mb-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700"
             disabled={isLoading}
           >
             {isLoading ? 'Generating Content...' : 'Generate Content'}
           </Button>
           <Button
             onClick={handleApproveContent}
-            className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
+            className="w-full px-4 py-2 mb-2 font-bold text-white bg-green-500 rounded hover:bg-green-700"
             disabled={isApproved || !currentEvent.generatedContent || isTypefullyLoading}
           >
             {isTypefullyLoading ? 'Adding to Typefully...' : (isApproved ? 'Approved' : 'Approve Content')}
           </Button>
 
-          <Button onClick={handleOpenTemplateManager} className="mb-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full">
+          <Button onClick={handleOpenTemplateManager} className="w-full px-4 py-2 mb-2 font-bold text-white bg-green-500 rounded hover:bg-green-700">
             Manage Templates
           </Button>
           </div>
           </div>
           {currentEvent.generatedContent && (
-            <div className="mt-4 p-2 border rounded bg-gray-100">
+            <div className="p-2 mt-4 bg-gray-100 border rounded">
               <h3 className="text-lg font-bold">Generated Content</h3>
               {currentEvent.selectedIdea && <p><strong>Selected Idea:</strong> {currentEvent.selectedIdea.title}</p>}
               <ReactMarkdown>{currentEvent.generatedContent}</ReactMarkdown>

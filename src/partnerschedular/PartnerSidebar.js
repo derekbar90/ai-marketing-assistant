@@ -72,6 +72,7 @@ export const PartnerSidebar = () => {
   const [latestTweets, setLatestTweets] = useState([]);
   const [tweetUploadProgress, setTweetUploadProgress] = useState(0);
   const [uploadedTweetsCount, setUploadedTweetsCount] = useState(0);
+  const [tweetJsonInput, setTweetJsonInput] = useState('');
 
   useEffect(() => {
     if (selectedPartner) {
@@ -80,29 +81,6 @@ export const PartnerSidebar = () => {
     }
   }, [selectedPartner]);
 
-  useEffect(() => {
-    if (showTwitterTimeline && selectedPartner?.twitter) {
-      // Remove existing script if any
-      const existingScript = document.getElementById('twitter-widget-script');
-      if (existingScript) {
-        existingScript.remove();
-      }
-
-      // Create and append new script
-      const script = document.createElement('script');
-      script.id = 'twitter-widget-script';
-      script.src = "https://platform.twitter.com/widgets.js";
-      script.async = true;
-      script.charset = "utf-8";
-      document.body.appendChild(script);
-
-      script.onload = () => {
-        if (window.twttr && twitterTimelineRef.current) {
-          window.twttr.widgets.load(twitterTimelineRef.current);
-        }
-      };
-    }
-  }, [showTwitterTimeline, selectedPartner?.twitter]);
 
   const fetchDocuments = async () => {
     if (db && selectedPartner) {
@@ -379,10 +357,6 @@ export const PartnerSidebar = () => {
     }
   };
 
-  const toggleTwitterTimeline = () => {
-    setShowTwitterTimeline(!showTwitterTimeline);
-  };
-
   const handleGenerateTitle = async () => {
     if (!manualContent.trim()) {
       setToast({ show: true, message: 'Please provide content to generate a title', type: 'error' });
@@ -407,43 +381,64 @@ export const PartnerSidebar = () => {
   };
 
   const handleSubmitTweets = async () => {
-    if (!rawTweets.trim()) {
-      setToast({ show: true, message: 'Please enter raw tweets', type: 'error' });
-      return;
-    }
-
     if (!selectedPartner) {
       setToast({ show: true, message: 'No partner selected', type: 'error' });
       return;
     }
-
     const NAMESPACE = '1b671a64-40d5-491e-99b0-da01ff1f3341';
 
     try {
-      const parsed = parseTweets(rawTweets);
-      const { tweets } = parsed;
-      
+      const tweets = JSON.parse(tweetJsonInput);
+      if (!Array.isArray(tweets)) {
+        throw new Error('Input is not a valid array of tweets');
+      }
+
       setTweetUploadProgress(0);
       setUploadedTweetsCount(0);
 
       for (let i = 0; i < tweets.length; i++) {
         const tweet = tweets[i];
         try {
-          const uniqueId = uuidv5(`${tweet.content}${tweet.date}`, NAMESPACE);
+          const uniqueId = uuidv5(`${tweet.tweetText}${tweet.timestamp}`, NAMESPACE);
 
           const result = await db.query(`
-            INSERT INTO partner_tweets (id, partner_id, date, content)
-            VALUES ($1, $2, $3, $4)
-            ON CONFLICT (id) DO NOTHING
+            INSERT INTO partner_tweets (
+              id, partner_id, date, content, username, handle, 
+              reply_count, retweet_count, like_count, view_count, 
+              image_url, is_verified
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            ON CONFLICT (id) DO UPDATE SET
+              date = EXCLUDED.date,
+              content = EXCLUDED.content,
+              username = EXCLUDED.username,
+              handle = EXCLUDED.handle,
+              reply_count = EXCLUDED.reply_count,
+              retweet_count = EXCLUDED.retweet_count,
+              like_count = EXCLUDED.like_count,
+              view_count = EXCLUDED.view_count,
+              image_url = EXCLUDED.image_url,
+              is_verified = EXCLUDED.is_verified
             RETURNING id;
-          `, [uniqueId, selectedPartner.id, tweet.date, tweet.content]);
+          `, [
+            uniqueId, 
+            selectedPartner.id, 
+            new Date(tweet.timestamp), 
+            tweet.tweetText,
+            tweet.username,
+            tweet.handle,
+            parseInt(tweet.replyCount),
+            parseInt(tweet.retweetCount),
+            parseInt(tweet.likeCount),
+            tweet.viewCount,
+            tweet.imageUrl,
+            tweet.isVerified
+          ]);
 
-          // If a row was inserted (not ignored due to conflict), increment the count
           if (result.rowCount > 0) {
             setUploadedTweetsCount(prev => prev + 1);
           }
 
-          // Update progress
           setTweetUploadProgress(Math.round(((i + 1) / tweets.length) * 100));
         } catch (error) {
           console.error('Error adding tweet:', error);
@@ -451,14 +446,14 @@ export const PartnerSidebar = () => {
         }
       }
 
-      setToast({ show: true, message: `Successfully added ${uploadedTweetsCount} new tweets`, type: 'success' });
-      setRawTweets('');
+      setToast({ show: true, message: `Successfully added/updated ${uploadedTweetsCount} tweets`, type: 'success' });
+      setTweetJsonInput('');
       await fetchLatestTweets();
     } catch (error) {
       console.error('Error adding tweets:', error);
-      setToast({ show: true, message: 'Error adding tweets', type: 'error' });
+      setToast({ show: true, message: 'Error parsing or adding tweets', type: 'error' });
     } finally {
-      setTweetUploadProgress(0); // Reset progress after completion or error
+      setTweetUploadProgress(0);
     }
   };
 
@@ -700,55 +695,6 @@ export const PartnerSidebar = () => {
             </Button>
           </div>
 
-          {/* Twitter Timeline Toggle */}
-          {selectedPartner.twitter && (
-            <div className="bg-gray-100 p-4 rounded-lg mb-4">
-              <Button 
-                onClick={toggleTwitterTimeline} 
-                className="w-full flex justify-between items-center"
-                variant="outline"
-              >
-                <span>Twitter Timeline</span>
-                {showTwitterTimeline ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-              </Button>
-              
-              {showTwitterTimeline && (
-                <div ref={twitterTimelineRef} className="mt-4 h-full overflow-y-auto">
-                  <a 
-                    className="twitter-timeline" 
-                    href={`https://twitter.com/${selectedPartner.twitter}`}
-                    data-height="250"
-                  >
-                    Tweets by {selectedPartner.twitter}
-                  </a>
-                   {/* Add Raw Tweets Section */}
-          <div className="bg-gray-100 p-4 rounded-lg mb-4">
-          <h3 className="font-bold mb-2">Add Raw Tweets</h3>
-          <Textarea
-            value={rawTweets}
-            onChange={(e) => setRawTweets(e.target.value)}
-            placeholder="Enter raw tweets here..."
-            rows={1}
-            className="mb-2"
-          />
-          <Button onClick={handleSubmitTweets} disabled={!rawTweets.trim() || tweetUploadProgress > 0}>
-            {tweetUploadProgress > 0 ? 'Uploading...' : 'Add Tweets'}
-          </Button>
-          {tweetUploadProgress > 0 && (
-            <div className="mt-2">
-              <Progress value={tweetUploadProgress} className="w-full" />
-              <p className="text-sm text-center mt-1">
-                {tweetUploadProgress}% Uploaded 
-                {uploadedTweetsCount > 0 && ` (${uploadedTweetsCount} new tweets)`}
-              </p>
-            </div>
-          )}
-        </div>  
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Latest Tweets Section */}
           <div className="bg-gray-100 p-4 rounded-lg mb-4">
             <h3 className="font-bold mb-2">Latest Tweets ({latestTweets.length})</h3>
@@ -766,6 +712,27 @@ export const PartnerSidebar = () => {
                 ))
               )}
             </div>
+          </div>
+
+          {/* Import Tweets Section */}
+          <div className="bg-gray-100 p-4 rounded-lg mb-4">
+            <h3 className="font-bold mb-2">Import Tweets</h3>
+            <Textarea
+              value={tweetJsonInput}
+              onChange={(e) => setTweetJsonInput(e.target.value)}
+              placeholder="Paste JSON array of tweets here"
+              rows={10}
+              className="mb-2"
+            />
+            <Button 
+              onClick={handleSubmitTweets} 
+              disabled={!tweetJsonInput.trim()}
+            >
+              Import Tweets
+            </Button>
+            {tweetUploadProgress > 0 && (
+              <Progress value={tweetUploadProgress} className="mt-2" />
+            )}
           </div>
         </div>
       )}
