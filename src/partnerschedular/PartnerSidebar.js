@@ -405,7 +405,19 @@ export const PartnerSidebar = () => {
         try {
           const uniqueId = uuidv5(`${tweet.tweetText}${tweet.timestamp}`, NAMESPACE);
 
-          // Generate embedding for tweet content
+          // Check if tweet already exists
+          const existingTweet = await db.query(`
+            SELECT id FROM partner_tweets 
+            WHERE id = $1 AND partner_id = $2;
+          `, [uniqueId, selectedPartner.id]);
+
+          if (existingTweet.rows.length > 0) {
+            // Skip this tweet entirely if it already exists
+            setTweetUploadProgress(Math.round(((i + 1) / tweets.length) * 100));
+            continue;
+          }
+
+          // Only generate embedding for new tweets
           const embedding = await getEmbedding(tweet.tweetText);
           if (!embedding) {
             throw new Error('Failed to get embedding for tweet');
@@ -419,18 +431,6 @@ export const PartnerSidebar = () => {
               image_url, is_verified, embedding
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::vector)
-            ON CONFLICT (id) DO UPDATE SET
-              date = EXCLUDED.date,
-              content = EXCLUDED.content,
-              username = EXCLUDED.username,
-              handle = EXCLUDED.handle,
-              reply_count = EXCLUDED.reply_count,
-              retweet_count = EXCLUDED.retweet_count,
-              like_count = EXCLUDED.like_count,
-              view_count = EXCLUDED.view_count,
-              image_url = EXCLUDED.image_url,
-              is_verified = EXCLUDED.is_verified,
-              embedding = EXCLUDED.embedding
             RETURNING id;
           `, [
             uniqueId, 
@@ -447,8 +447,8 @@ export const PartnerSidebar = () => {
             tweet.isVerified,
             embeddingString
           ]);
-
-          if (result.rowCount > 0) {
+          debugger;
+          if (result.affectedRows > 0) {
             setUploadedTweetsCount(prev => prev + 1);
           }
 
@@ -459,7 +459,7 @@ export const PartnerSidebar = () => {
         }
       }
 
-      setToast({ show: true, message: `Successfully added/updated ${uploadedTweetsCount} tweets`, type: 'success' });
+      setToast({ show: true, message: `Successfully added ${uploadedTweetsCount} new tweets`, type: 'success' });
       setTweetJsonInput('');
       await fetchLatestTweets();
     } catch (error) {

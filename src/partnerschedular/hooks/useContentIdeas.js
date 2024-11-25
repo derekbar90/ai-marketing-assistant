@@ -12,8 +12,14 @@ export const useContentIdeas = () => {
   const templates = state.templates;
 
   const createIdeas = async (client, event, selfData, additionalContext) => {
-    const systemPrompt = `You are an AI assistant specialized in generating initial content ideas for posts. Use the provided context analysis, template, self partner data, and additional context to generate content ideas. Each idea should include a title, topic, a brief with all required data to support the idea (referencing numbers, dates,partners,twitter handles, etc), the proper template and relevance. Provide as many ideas as possible. Relevance is a number between 0 and 1, indicating how well the idea aligns with the partner's recent content, data, and additional context. Return the ideas as a JSON array of objects with the following structure: 
-    { ideas: [{ title: string, template: string, topic: string, relevance: number, brief: string }, ...] }.`;
+    debugger;
+    const systemPrompt = `
+    You are an AI assistant specialized in generating initial content ideas for posts. 
+    Use the provided context analysis, template, self partner data, and additional context to generate content ideas. 
+    Each idea should include a title, topic, a brief with all required data to support the idea (referencing numbers, dates,partners,twitter handles, etc), the proper template and relevance. 
+    Provide as many ideas as possible. Relevance is a number between 0 and 1, indicating how well the idea aligns with the partner's recent content, data, and additional context. 
+    Each idea should also contain the tweet ids from the partner's twitter account that support the idea. Return the ideas as a JSON array of objects with the following structure: 
+    { ideas: [{ title: string, template: string, topic: string, relevance: number, brief: string, relevantDocumentIds: [string] }, ...] }.`;
 
     const userPrompt = `Templates: ${templates.map(template => template.title).join(', ')}
     Partner: ${event.partner.name}

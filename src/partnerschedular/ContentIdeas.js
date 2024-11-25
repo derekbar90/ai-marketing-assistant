@@ -3,12 +3,14 @@ import { Button } from '../components/ui/button';
 import { AppContext } from './index';
 import { useContentIdeas } from './hooks/useContentIdeas';
 import { useRefineIdea } from './hooks/useRefineIdea';
+import { Tweet } from '../components/ui/tweet';
 
 export const ContentIdeas = ({ event, selectedTemplate, additionalContext, actualAdditionalContext, onSelectIdea }) => {
   const { dispatch } = useContext(AppContext);
   const { isLoading, contentIdeas, generateIdeas } = useContentIdeas();
   const { isLoading: isRefining, refinedIdea, refineIdea } = useRefineIdea();
   const [selectedIdea, setSelectedIdea] = useState(null);
+  const [showRelevantDocs, setShowRelevantDocs] = useState({});
 
   const handleGenerateIdeas = async () => {
     try {
@@ -33,6 +35,13 @@ export const ContentIdeas = ({ event, selectedTemplate, additionalContext, actua
         dispatch({ type: 'SET_ERROR', payload: 'Failed to refine idea. Please try again.' });
       }
     }
+  };
+
+  const toggleRelevantDocs = (ideaId) => {
+    setShowRelevantDocs(prev => ({
+      ...prev,
+      [ideaId]: !prev[ideaId]
+    }));
   };
 
   return (
@@ -60,6 +69,23 @@ export const ContentIdeas = ({ event, selectedTemplate, additionalContext, actua
                   <li key={index} className="text-sm text-gray-600">{suggestion}</li>
                 ))}
               </ul>
+            </div>
+          )}
+          {selectedIdea.relevantDocumentIds && (
+            <div className="mt-2">
+              <Button
+                onClick={() => toggleRelevantDocs('selected')}
+                className="text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-2 rounded"
+              >
+                {showRelevantDocs['selected'] ? 'Hide' : 'Show'} Relevant Documents
+              </Button>
+              {showRelevantDocs['selected'] && (
+                <ul className="list-disc list-inside mt-2">
+                  {selectedIdea.relevantDocumentIds.map((id, index) => (
+                    <Tweet key={index} tweetId={id} />
+                  ))}
+                </ul>
+              )}
             </div>
           )}
           <Button 
@@ -98,6 +124,23 @@ export const ContentIdeas = ({ event, selectedTemplate, additionalContext, actua
                   </span>
                   <p className="text-xs text-gray-600 ml-1">{(idea.relevance * 100).toFixed(1)}%</p>
                 </div>
+                {idea.relevantDocumentIds && (
+                  <div className="mt-2">
+                    <Button
+                      onClick={() => toggleRelevantDocs(index)}
+                      className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-2 rounded"
+                    >
+                      {showRelevantDocs[index] ? 'Hide' : 'Show'} Relevant Documents
+                    </Button>
+                    {showRelevantDocs[index] && (
+                      <ul className="list-disc list-inside mt-2">
+                        {idea.relevantDocumentIds.map((id, docIndex) => (
+                          <Tweet key={docIndex} tweetId={id} />
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
                 <Button 
                   onClick={() => handleSelectIdea(idea)} 
                   className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded w-full text-xs"

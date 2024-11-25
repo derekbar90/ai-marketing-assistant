@@ -2,6 +2,27 @@ import { useState } from 'react';
 
 const API_ROOT = 'http://localhost:3020'; // Assuming your server is hosted on the same domain
 
+// Function to adjust the schedule time to the closest window
+const adjustScheduleTime = (date) => {
+  const targetHours = [12, 14, 17]; // 12 PM, 2 PM, 5 PM in 24-hour format
+  const scheduleDate = new Date(date);
+  const currentHour = scheduleDate.getHours();
+  
+  let closestHour = targetHours[0];
+  let minDifference = Math.abs(currentHour - targetHours[0]);
+
+  for (let i = 1; i < targetHours.length; i++) {
+    const diff = Math.abs(currentHour - targetHours[i]);
+    if (diff < minDifference) {
+      minDifference = diff;
+      closestHour = targetHours[i];
+    }
+  }
+
+  scheduleDate.setHours(closestHour, 0, 0, 0);
+  return scheduleDate;
+};
+
 export const useTypefullyDrafts = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -11,6 +32,10 @@ export const useTypefullyDrafts = () => {
     setError(null);
 
     try {
+      const adjustedScheduleDate = options.scheduleDate 
+        ? adjustScheduleTime(options.scheduleDate)
+        : adjustScheduleTime(new Date());
+
       const response = await fetch(`${API_ROOT}/upload-draft`, {
         method: 'POST',
         headers: {
@@ -20,7 +45,7 @@ export const useTypefullyDrafts = () => {
           content,
           threadify: options.threadify,
           share: options.share,
-          scheduleDate: options.scheduleDate,
+          scheduleDate: adjustedScheduleDate.toISOString(),
           autoRetweetEnabled: options.autoRetweetEnabled,
           autoPlugEnabled: options.autoPlugEnabled,
         }),
